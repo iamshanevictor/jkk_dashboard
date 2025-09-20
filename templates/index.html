@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airbnb Performance Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 font-sans">
+    <header class="bg-blue-600 text-white p-4 shadow-md">
+        <div class="container mx-auto">
+            <h1 class="text-3xl font-bold">Airbnb Performance Dashboard</h1>
+        </div>
+    </header>
+
+    <main class="container mx-auto mt-8 p-4 bg-white rounded-lg shadow-lg">
+        <h2 class="text-2xl font-semibold mb-4 text-gray-800">Property Performance Overview</h2>
+        <div id="chart-container" class="relative h-96">
+            <canvas id="performanceChart"></canvas>
+        </div>
+    </main>
+
+    <footer class="bg-blue-600 text-white p-4 mt-8 shadow-md">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2023 Airbnb Dashboard</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/api/property-performance')
+                .then(response => response.json())
+                .then(data => {
+                    const propertyNames = data.map(property => property.name);
+                    const revenues = data.map(property => property.revenue);
+
+                    const ctx = document.getElementById('performanceChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: propertyNames,
+                            datasets: [{
+                                label: 'Revenue',
+                                data: revenues,
+                                backgroundColor: 'rgba(59, 130, 246, 0.6)', // Tailwind blue-500
+                                borderColor: 'rgba(59, 130, 246, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Revenue'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Property Name'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => console.error('Error fetching property performance data:', error));
+        });
+    </script>
+</body>
+</html>
