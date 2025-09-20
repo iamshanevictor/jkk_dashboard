@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}Precision Pricing - Insights Dashboard{% endblock %}
+
+{% block content %}
+        <h2 class="text-2xl font-semibold mb-6 text-gray-800">Weekly Pricing Insight Report</h2>
+
+        <div class="mb-6 max-w-sm mx-auto p-4 bg-gray-50 rounded-lg shadow-inner">
+            <label for="clusterSelect" class="block text-sm font-medium text-gray-700 mb-2">Select Cluster ID</label>
+            <select id="clusterSelect" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                <option value="">Select a Cluster</option>
+            </select>
+
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="startDate" class="block text-sm font-medium text-gray-700">Start Date</label>
+                    <input type="date" id="startDate" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label for="endDate" class="block text-sm font-medium text-gray-700">End Date</label>
+                    <input type="date" id="endDate" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                </div>
+            </div>
+            <button id="applyFilterBtn" class="mt-4 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Apply Filter
+            </button>
+        </div>
+
+        <div id="insightsContent" class="hidden">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-blue-100 p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-blue-800">Average Prices</h3>
+                    <p class="text-3xl font-bold text-blue-600 mt-2" id="avgPrices"></p>
+                </div>
+                <div class="bg-purple-100 p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-purple-800">Booking Rate</h3>
+                    <p class="text-3xl font-bold text-purple-600 mt-2" id="bookingRate"></p>
+                </div>
+                <div class="bg-green-100 p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-green-800">Booking Rate by Day</h3>
+                    <ul id="bookingRateByDayList" class="list-disc list-inside mt-2 text-green-700">
+                        <!-- Booking rate by day will be injected here -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Price Comparison Trend</h3>
+                    <div class="relative h-72">
+                        <canvas id="priceComparisonChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Booking Rate by Day of Week</h3>
+                    <div class="relative h-72">
+                        <canvas id="bookingRateDayChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Missed Opportunities Table -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Missed Opportunities</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit ID</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Our Price</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comp Avg Price</th>
+                            </tr>
+                        </thead>
+                        <tbody id="missedOpportunitiesTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Missed opportunities will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+                <p id="noMissedOpportunities" class="text-gray-700 mt-4 hidden">No missed opportunities detected for the selected period.</p>
+            </div>
+        </div>
+
+        <div id="noDataMessage" class="hidden text-center text-gray-600 mt-10">
+            <p class="text-xl">Please select a cluster and apply filters to view insights.</p>
+        </div>
+{% endblock %}
+
+{% block scripts_extra %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const clusterSelect = document.getElementById('clusterSelect');
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            const applyFilterBtn = document.getElementById('applyFilterBtn');
+            const insightsContent = document.getElementById('insightsContent');
+            const noDataMessage = document.getElementById('noDataMessage');
+            const avgPrices = document.getElementById('avgPrices');
+            const bookingRate = document.getElementById('bookingRate');
+            const bookingRateByDayList = document.getElementById('bookingRateByDayList');
+            const missedOpportunitiesTableBody = document.getElementById('missedOpportunitiesTableBody');
+            const noMissedOpportunities = document.getElementById('noMissedOpportunities');
+            let priceComparisonChart, bookingRateDayChart;
+
+            // Set default date range to last 7 days
+            const today = new Date();
+            const sevenDaysAgo = new Date(today);
+            sevenDaysAgo.setDate(today.getDate() - 7);
+            endDateInput.value = today.toISOString().split('T')[0];
+            startDateInput.value = sevenDaysAgo.toISOString().split('T')[0];
+
+            // Fetch unique cluster IDs to populate the dropdown
+            fetch('/api/clusters')
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(cluster => {
+                        const option = document.createElement('option');
+                        option.value = cluster.name;
+                        option.textContent = cluster.name;
+                        clusterSelect.appendChild(option);
+                    });
+
+                    // Show initial message if no cluster is selected
+                    if (clusterSelect.value === "") {
+                        noDataMessage.classList.remove('hidden');
+                    }
+                })
+                .catch(error => console.error('Error fetching clusters:', error));
+
+            applyFilterBtn.addEventListener('click', function() {
+                const selectedCluster = clusterSelect.value;
+                const startDate = startDateInput.value;
+                const endDate = endDateInput.value;
+
+                if (selectedCluster) {
+                    noDataMessage.classList.add('hidden');
+                    fetchInsights(selectedCluster, startDate, endDate);
+                } else {
+                    insightsContent.classList.add('hidden');
+                    noDataMessage.classList.remove('hidden');
+                    noDataMessage.textContent = 'Please select a cluster to view insights.';
+                }
+            });
+
+            function fetchInsights(clusterName, startDate, endDate) {
+                let url = `/api/insights/${clusterName}?`;
+                if (startDate) url += `start_date=${startDate}&`;
+                if (endDate) url += `end_date=${endDate}&`;
+                
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => Promise.reject(err));
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (Object.keys(data.insights).length === 0) {
+                            insightsContent.classList.add('hidden');
+                            noDataMessage.classList.remove('hidden');
+                            noDataMessage.textContent = 'No price logs found for this cluster and date range.';
+                            return;
+                        }
+
+                        insightsContent.classList.remove('hidden');
+                        const insights = data.insights;
+
+                        // Update Summary Cards
+                        avgPrices.textContent = `$${insights.avg_our_price} | $${insights.avg_comp_price}`;
+                        bookingRate.textContent = `${insights.booking_rate}%`;
+
+                        // Update Booking Rate by Day
+                        bookingRateByDayList.innerHTML = '';
+                        const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                        daysOfWeek.forEach(day => {
+                            const rate = insights.booking_rate_by_day[day] !== undefined ? insights.booking_rate_by_day[day].toFixed(2) : '0.00';
+                            const listItem = document.createElement('li');
+                            listItem.textContent = `${day}: ${rate}%`;
+                            bookingRateByDayList.appendChild(listItem);
+                        });
+
+                        // Update Missed Opportunities Table
+                        missedOpportunitiesTableBody.innerHTML = ''; // Clear previous entries
+                        if (insights.missed_opportunities && insights.missed_opportunities.length > 0) {
+                            noMissedOpportunities.classList.add('hidden');
+                            insights.missed_opportunities.forEach(mo => {
+                                const row = missedOpportunitiesTableBody.insertRow();
+                                row.innerHTML = `
+                                    <td class="px-6 py-4 whitespace-nowrap">${mo.date}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">${mo.unit_id}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">$${mo.our_price}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">$${mo.comp_avg_price}</td>
+                                `;
+                            });
+                        } else {
+                            noMissedOpportunities.classList.remove('hidden');
+                        }
+
+                        // Update Chart.js (Price Comparison)
+                        if (priceComparisonChart) {
+                            priceComparisonChart.destroy();
+                        }
+                        const ctxPrice = document.getElementById('priceComparisonChart').getContext('2d');
+                        priceComparisonChart = new Chart(ctxPrice, {
+                            type: 'line',
+                            data: {
+                                labels: insights.chart_data.map(item => item.date),
+                                datasets: [
+                                    {
+                                        label: 'Our Listed Price',
+                                        data: insights.chart_data.map(item => item.our_price),
+                                        borderColor: 'rgba(59, 130, 246, 1)', // Tailwind blue-500
+                                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                                        tension: 0.3,
+                                        fill: false
+                                    },
+                                    {
+                                        label: 'Competitor Avg Price',
+                                        data: insights.chart_data.map(item => item.comp_price),
+                                        borderColor: 'rgba(239, 68, 68, 1)', // Tailwind red-500
+                                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                                        tension: 0.3,
+                                        fill: false
+                                    }
+                                ]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        title: {
+                                            display: true,
+                                            text: 'Price'
+                                        }
+                                    },
+                                    x: {
+                                        title: {
+                                            display: true,
+                                            text: 'Date'
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        // Update Chart.js (Booking Rate by Day)
+                        if (bookingRateDayChart) {
+                            bookingRateDayChart.destroy();
+                        }
+                        const ctxBooking = document.getElementById('bookingRateDayChart').getContext('2d');
+                        const bookingRateDays = Object.keys(insights.booking_rate_by_day);
+                        const bookingRateValues = Object.values(insights.booking_rate_by_day).map(rate => rate.toFixed(2));
+                        bookingRateDayChart = new Chart(ctxBooking, {
+                            type: 'bar',
+                            data: {
+                                labels: bookingRateDays,
+                                datasets: [{
+                                    label: 'Booking Rate %',
+                                    data: bookingRateValues,
+                                    backgroundColor: 'rgba(168, 85, 247, 0.6)', // Tailwind purple-500
+                                    borderColor: 'rgba(168, 85, 247, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        title: {
+                                            display: true,
+                                            text: 'Booking Rate %'
+                                        },
+                                        max: 100
+                                    },
+                                    x: {
+                                        title: {
+                                            display: true,
+                                            text: 'Day of Week'
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                    })
+                    .catch(error => {
+                        console.error('Error fetching insights:', error);
+                        insightsContent.classList.add('hidden');
+                        noDataMessage.classList.remove('hidden');
+                        noDataMessage.innerHTML = `<p class="text-xl text-red-600">Error loading insights: ${error.error || error.message || 'Unknown error'}</p>`;
+                    });
+            }
+
+            // Initial load of insights if a cluster is already selected (e.g., from URL param or default)
+            // This logic will be triggered by applyFilterBtn click now.
+            // if (clusterSelect.value) {
+            //     fetchInsights(clusterSelect.value, startDateInput.value, endDateInput.value);
+            // }
+        });
+    </script>
+{% endblock %}

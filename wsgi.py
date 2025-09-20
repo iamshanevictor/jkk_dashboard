@@ -3,7 +3,7 @@ from app import create_app
 app = create_app()
 
 if __name__ == '__main__':
-    # Testing Instructions:
+    # Phase 1 - Precision Pricing Initiative CMS Testing Instructions:
     # 1. Create a PostgreSQL database locally (e.g., named 'airbnb_dashboard').
     # 2. Set the DATABASE_URL environment variable:
     #    For Windows: $env:DATABASE_URL="postgresql://user:password@localhost/airbnb_dashboard"
@@ -16,22 +16,20 @@ if __name__ == '__main__':
     #    For Linux/macOS: source .venv/bin/activate
     # 4. Install dependencies:
     #    pip install -r requirements.txt
-    # 5. Initialize the database and insert sample data:
-    #    (Ensure your virtual environment is activated)
-    #    python
-    #    >>> from app import create_app
-    #    >>> from app.models import db, Property
-    #    >>> app = create_app()
-    #    >>> with app.app_context():
-    #    ...     db.create_all()
-    #    ...     prop1 = Property(name='Cozy Studio', occupancy_rate=0.85, revenue=1500.00)
-    #    ...     prop2 = Property(name='Luxury Villa', occupancy_rate=0.70, revenue=5000.00)
-    #    ...     prop3 = Property(name='Downtown Apartment', occupancy_rate=0.92, revenue=2200.00)
-    #    ...     db.session.add_all([prop1, prop2, prop3])
-    #    ...     db.session.commit()
-    #    ...     print("Sample data inserted.")
-    #    ...     exit()
+    # 5. Seed the database with initial Cluster and Property data:
+    #    (Ensure your virtual environment is activated and DATABASE_URL is set)
+    #    python seed.py
+    #    This will drop all existing tables, recreate them, and add sample clusters and properties.
     # 6. Run the Flask application:
     #    flask run
-    # 7. Open your web browser and visit http://127.0.0.1:5000/ to see the chart rendered with sample data.
+    # 7. Open your web browser and visit http://127.0.0.1:5000/
+    #    - On the "Quick Log" page, select a Unit ID, enter date, prices, and notes, then click "Log Entry".
+    #    - Submit several days of fake data for both UNIT_A and UNIT_B.
+    # 8. Navigate to http://127.0.0.1:5000/insights
+    #    - Select a Cluster ID from the dropdown and optionally a date range.
+    #    - Verify that the average prices, booking rate, booking rate by day, missed opportunities, and the price comparison chart render correctly.
+    # 9. Navigate to http://127.0.0.1:5000/manage
+    #    - Verify that you can view the seeded clusters and properties.
+    #    - Test adding new clusters and properties, and observe the tables update.
+    #    - (Note: Edit/Delete functionality for tables is not fully implemented in frontend JS for this phase, but backend endpoints exist.)
     app.run()
