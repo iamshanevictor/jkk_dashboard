@@ -4,10 +4,12 @@ services:
     env: python
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: flask db upgrade && gunicorn wsgi:app
+    startCommand: python -c "from app import create_app; from app.models import db; app = create_app(); app.app_context().push(); db.create_all()" && python -m flask db upgrade && gunicorn wsgi:app
     envVars:
       - key: FLASK_ENV
         value: production
+      - key: FLASK_APP
+        value: wsgi.py
       - key: SECRET_KEY
         generateValue: true
       - key: PYTHON_VERSION
