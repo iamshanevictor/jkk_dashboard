@@ -10,20 +10,6 @@
             <select id="clusterSelect" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
                 <option value="">Select a Cluster</option>
             </select>
-
-            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="startDate" class="block text-sm font-medium text-gray-700">Start Date</label>
-                    <input type="date" id="startDate" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                </div>
-                <div>
-                    <label for="endDate" class="block text-sm font-medium text-gray-700">End Date</label>
-                    <input type="date" id="endDate" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                </div>
-            </div>
-            <button id="applyFilterBtn" class="mt-4 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Apply Filter
-            </button>
         </div>
 
         <div id="insightsContent" class="hidden">
@@ -92,9 +78,9 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const clusterSelect = document.getElementById('clusterSelect');
-            const startDateInput = document.getElementById('startDate');
-            const endDateInput = document.getElementById('endDate');
-            const applyFilterBtn = document.getElementById('applyFilterBtn');
+            // const startDateInput = document.getElementById('startDate');
+            // const endDateInput = document.getElementById('endDate');
+            // const applyFilterBtn = document.getElementById('applyFilterBtn');
             const insightsContent = document.getElementById('insightsContent');
             const noDataMessage = document.getElementById('noDataMessage');
             const avgPrices = document.getElementById('avgPrices');
@@ -104,12 +90,12 @@
             const noMissedOpportunities = document.getElementById('noMissedOpportunities');
             let priceComparisonChart, bookingRateDayChart;
 
-            // Set default date range to last 7 days
-            const today = new Date();
-            const sevenDaysAgo = new Date(today);
-            sevenDaysAgo.setDate(today.getDate() - 7);
-            endDateInput.value = today.toISOString().split('T')[0];
-            startDateInput.value = sevenDaysAgo.toISOString().split('T')[0];
+            // Remove default date range setting
+            // const today = new Date();
+            // const sevenDaysAgo = new Date(today);
+            // sevenDaysAgo.setDate(today.getDate() - 7);
+            // endDateInput.value = today.toISOString().split('T')[0];
+            // startDateInput.value = sevenDaysAgo.toISOString().split('T')[0];
 
             // Fetch unique cluster IDs to populate the dropdown
             fetch('/api/clusters')
@@ -122,21 +108,23 @@
                         clusterSelect.appendChild(option);
                     });
 
-                    // Show initial message if no cluster is selected
-                    if (clusterSelect.value === "") {
+                    // Automatically load insights for the first cluster if available, or show no data message
+                    if (data.length > 0) {
+                        clusterSelect.value = data[0].name; // Select the first cluster by default
+                        fetchInsights(data[0].name); // Fetch insights for the first cluster
+                    } else {
                         noDataMessage.classList.remove('hidden');
+                        noDataMessage.textContent = 'No clusters available. Please add clusters in Manage Data.';
                     }
                 })
                 .catch(error => console.error('Error fetching clusters:', error));
 
-            applyFilterBtn.addEventListener('click', function() {
+            clusterSelect.addEventListener('change', function() {
                 const selectedCluster = clusterSelect.value;
-                const startDate = startDateInput.value;
-                const endDate = endDateInput.value;
 
                 if (selectedCluster) {
                     noDataMessage.classList.add('hidden');
-                    fetchInsights(selectedCluster, startDate, endDate);
+                    fetchInsights(selectedCluster);
                 } else {
                     insightsContent.classList.add('hidden');
                     noDataMessage.classList.remove('hidden');
@@ -144,10 +132,8 @@
                 }
             });
 
-            function fetchInsights(clusterName, startDate, endDate) {
-                let url = `/api/insights/${clusterName}?`;
-                if (startDate) url += `start_date=${startDate}&`;
-                if (endDate) url += `end_date=${endDate}&`;
+            function fetchInsights(clusterName) {
+                let url = `/api/insights/${clusterName}`;
                 
                 fetch(url)
                     .then(response => {
@@ -157,10 +143,10 @@
                         return response.json();
                     })
                     .then(data => {
-                        if (Object.keys(data.insights).length === 0) {
+                        if (Object.keys(data.insights).length === 0 || !data.insights.chart_data || data.insights.chart_data.length === 0) {
                             insightsContent.classList.add('hidden');
                             noDataMessage.classList.remove('hidden');
-                            noDataMessage.textContent = 'No price logs found for this cluster and date range.';
+                            noDataMessage.textContent = 'No price logs found for this cluster.';
                             return;
                         }
 
@@ -168,7 +154,7 @@
                         const insights = data.insights;
 
                         // Update Summary Cards
-                        avgPrices.textContent = `$${insights.avg_our_price} | $${insights.avg_comp_price}`;
+                        avgPrices.textContent = `₱${insights.avg_our_price} | ₱${insights.avg_comp_price}`;
                         bookingRate.textContent = `${insights.booking_rate}%`;
 
                         // Update Booking Rate by Day
@@ -190,8 +176,8 @@
                                 row.innerHTML = `
                                     <td class="px-6 py-4 whitespace-nowrap">${mo.date}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">${mo.unit_id}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">$${mo.our_price}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">$${mo.comp_avg_price}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">₱${mo.our_price}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">₱${mo.comp_avg_price}</td>
                                 `;
                             });
                         } else {
@@ -297,11 +283,8 @@
                     });
             }
 
-            // Initial load of insights if a cluster is already selected (e.g., from URL param or default)
-            // This logic will be triggered by applyFilterBtn click now.
-            // if (clusterSelect.value) {
-            //     fetchInsights(clusterSelect.value, startDateInput.value, endDateInput.value);
-            // }
+            // Initial load of insights is now handled when clusters are fetched.
+            // No need for a separate initial load block here.
         });
     </script>
 {% endblock %}

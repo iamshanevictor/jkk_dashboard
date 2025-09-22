@@ -1,8 +1,27 @@
 from flask import Blueprint, jsonify, render_template, request
+from marshmallow import Schema, fields, ValidationError
 from app.models import db, Property, PriceLog, Cluster
 from datetime import datetime, timedelta
 from sqlalchemy import func
 import json
+
+# Validation schemas
+class PriceLogSchema(Schema):
+    unit_id = fields.Str(required=True, validate=lambda x: len(x) <= 50)
+    date = fields.Date(required=True)
+    our_price = fields.Float(required=True, validate=lambda x: x > 0)
+    comp_avg_price = fields.Float(required=True, validate=lambda x: x >= 0)
+    notes = fields.Str(missing='', validate=lambda x: len(x) <= 1000)
+    was_booked = fields.Bool(missing=False)
+    final_price_paid = fields.Float(allow_none=True, validate=lambda x: x is None or x > 0)
+
+class QuickLogSchema(Schema):
+    unit_id = fields.Str(required=True, validate=lambda x: len(x) <= 50)
+    date = fields.Date(required=True)
+    listed_price = fields.Float(required=True, validate=lambda x: x > 0)
+    was_booked = fields.Str(required=True, validate=lambda x: x in ['Y', 'N'])
+    lead_time = fields.Int(allow_none=True, validate=lambda x: x is None or x >= 0)
+    season_flag = fields.Str(required=True, validate=lambda x: x in ['Summer', 'Fall', 'Winter', 'Spring'])
 
 main = Blueprint('main', __name__)
 data_entry_bp = Blueprint('data_entry_bp', __name__)
@@ -20,6 +39,98 @@ def insights():
 @main.route('/manage')
 def manage():
     return render_template('manage.html')
+
+# New route for data entry form
+@main.route('/log_entry', methods=['GET', 'POST'])
+def log_entry():
+    if request.method == 'POST':
+        data = request.get_json()
+        unit_id = data.get('unit_id')
+        date_str = data.get('date')
+        our_listed_price = data.get('listed_price')
+        was_booked = data.get('was_booked') == 'Y'
+        lead_time = data.get('lead_time')
+        season_flag = data.get('season_flag')
+
+        if not all([unit_id, date_str, our_listed_price, was_booked is not None, season_flag]):
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        property_obj = Property.query.filter_by(unit_id=unit_id).first()
+        if not property_obj:
+            return jsonify({'error': f'Property with unit_id {unit_id} not found'}), 404
+
+        try:
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+
+        # Lead time is optional, convert to int if present, otherwise None
+        if lead_time:
+            try:
+                lead_time = int(lead_time)
+            except ValueError:
+                return jsonify({'error': 'Lead Time must be an integer'}), 400
+        else:
+            lead_time = None
+
+        new_log = PriceLog(
+            property_id=property_obj.id,
+            date=date_obj,
+            our_listed_price=our_listed_price,
+            was_booked=was_booked,
+            lead_time=lead_time,
+            day_of_week=date_obj.strftime('%A'),
+            season_flag=season_flag,
+            # For simplicity, comp_avg_price and final_price_paid are omitted as they are not in the new form spec.
+            # They can be added back if needed in the future or handled as part of the original log-price route.
+            comp_avg_price=0.0, # Default value
+            final_price_paid=our_listed_price if was_booked else None
+        )
+        db.session.add(new_log)
+        db.session.commit()
+
+        return jsonify({'message': 'Price log entry created successfully'}), 201
+    
+    properties = Property.query.all()
+    unit_ids = [p.unit_id for p in properties]
+    return render_template('data_entry.html', unit_ids=unit_ids)
+
+
+@main.route('/dashboard')
+def dashboard():
+    # Fetch all PriceLog entries, ordered by date descending
+    price_logs = PriceLog.query.order_by(PriceLog.date.desc()).all()
+
+    # Calculate summary statistics
+    total_entries = len(price_logs)
+    booked_entries = sum(1 for log in price_logs if log.was_booked)
+    not_booked_entries = total_entries - booked_entries
+
+    total_listed_price = sum(log.our_listed_price for log in price_logs)
+    avg_listed_price = (total_listed_price / total_entries) if total_entries > 0 else 0
+
+    # Prepare data for rendering
+    dashboard_data = [
+        {
+            'date': log.date.isoformat(),
+            'unit_id': log.property.unit_id,
+            'listed_price': log.our_listed_price,
+            'was_booked': 'Yes' if log.was_booked else 'No',
+            'lead_time': log.lead_time if log.lead_time is not None else '-',
+            'day_of_week': log.day_of_week,
+            'season_flag': log.season_flag
+        } for log in price_logs
+    ]
+
+    summary_stats = {
+        'total_entries': total_entries,
+        'booked_entries': booked_entries,
+        'not_booked_entries': not_booked_entries,
+        'avg_listed_price': round(avg_listed_price, 2)
+    }
+
+    return render_template('dashboard.html', dashboard_data=dashboard_data, summary_stats=summary_stats)
+
 
 # Data Entry Blueprint Routes
 @data_entry_bp.route('/api/properties', methods=['GET'])
@@ -80,26 +191,26 @@ def get_insights(cluster_name):
     if not cluster_property_ids:
         return jsonify({'message': f'No properties found for cluster {cluster_name}', 'insights': {}}), 200
 
-    # Default date range to last 7 days if not provided
-    end_date = datetime.utcnow().date()
-    start_date = end_date - timedelta(days=7)
+    # Initialize query to fetch all logs for the cluster's properties
+    logs_query = PriceLog.query.filter(PriceLog.property_id.in_(cluster_property_ids))
 
-    if start_date_str:
+    # Apply date range filter only if provided
+    if start_date_str and end_date_str:
         try:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-        except ValueError:
-            return jsonify({'error': 'Invalid start_date format. Use YYYY-MM-DD'}), 400
-    if end_date_str:
-        try:
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            logs_query = logs_query.filter(PriceLog.date.between(start_date, end_date))
         except ValueError:
-            return jsonify({'error': 'Invalid end_date format. Use YYYY-MM-DD'}), 400
+            return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+    else:
+        # If no dates provided, get the min/max dates from available logs for display purposes
+        min_date_log = logs_query.order_by(PriceLog.date.asc()).first()
+        max_date_log = logs_query.order_by(PriceLog.date.desc()).first()
+        start_date = min_date_log.date if min_date_log else None
+        end_date = max_date_log.date if max_date_log else None
 
-    # Get price logs for the selected date range and cluster
-    recent_logs = PriceLog.query.filter(
-        PriceLog.property_id.in_(cluster_property_ids),
-        PriceLog.date.between(start_date, end_date)
-    ).all()
+
+    recent_logs = logs_query.all()
 
     if not recent_logs:
         return jsonify({'message': 'No price logs found for this cluster and date range.', 'insights': {}}), 200
@@ -161,8 +272,8 @@ def get_insights(cluster_name):
         'booking_rate_by_day': booking_rate_by_day,
         'missed_opportunities': missed_opportunities,
         'chart_data': chart_data,
-        'start_date': start_date.isoformat(),
-        'end_date': end_date.isoformat()
+        'start_date': start_date.isoformat() if start_date else None,
+        'end_date': end_date.isoformat() if end_date else None
     }
 
     return jsonify({'insights': insights_data}), 200

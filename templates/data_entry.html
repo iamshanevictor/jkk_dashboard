@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Precision Pricing - Data Entry{% endblock %}
+
+{% block content %}
+    <h2 class="text-2xl font-semibold mb-6 text-gray-800">Daily Price Log Entry</h2>
+
+    <div class="max-w-md mx-auto bg-gray-50 p-6 rounded-lg shadow-inner">
+        <form id="priceLogForm" class="space-y-4">
+            <div>
+                <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
+                <input type="date" id="date" name="date" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
+            </div>
+
+            <div>
+                <label for="unitId" class="block text-sm font-medium text-gray-700">Unit ID</label>
+                <select id="unitId" name="unit_id" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md" required>
+                    <option value="">Select Unit ID</option>
+                    {% for unit_id in unit_ids %}
+                    <option value="{{ unit_id }}">{{ unit_id }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="listedPrice" class="block text-sm font-medium text-gray-700">Listed Price (₱)</label>
+                <input type="number" id="listedPrice" name="listed_price" step="0.01" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Was Booked?</label>
+                <div class="mt-1 flex items-center space-x-4">
+                    <input type="radio" id="wasBookedYes" name="was_booked" value="Y" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300" checked>
+                    <label for="wasBookedYes" class="ml-2 block text-sm text-gray-900">Yes</label>
+                    <input type="radio" id="wasBookedNo" name="was_booked" value="N" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300">
+                    <label for="wasBookedNo" class="ml-2 block text-sm text-gray-900">No</label>
+                </div>
+            </div>
+
+            <div id="leadTimeField">
+                <label for="leadTime" class="block text-sm font-medium text-gray-700">Lead Time (days, optional)</label>
+                <input type="number" id="leadTime" name="lead_time" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            </div>
+
+            <div>
+                <label for="seasonFlag" class="block text-sm font-medium text-gray-700">Season Flag</label>
+                <select id="seasonFlag" name="season_flag" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md" required>
+                    <option value="">Select Season</option>
+                    <option value="Summer">Summer</option>
+                    <option value="Fall">Fall</option>
+                    <option value="Winter">Winter</option>
+                    <option value="Spring">Spring</option>
+                </select>
+            </div>
+
+            <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Log Entry
+            </button>
+        </form>
+    </div>
+
+    <div id="toastNotification" class="hidden fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg transition-opacity duration-300 opacity-0">
+        Entry logged successfully!
+    </div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const priceLogForm = document.getElementById('priceLogForm');
+        const dateInput = document.getElementById('date');
+        const wasBookedYes = document.getElementById('wasBookedYes');
+        const wasBookedNo = document.getElementById('wasBookedNo');
+        const leadTimeField = document.getElementById('leadTimeField');
+        const toastNotification = document.getElementById('toastNotification');
+
+        // Set default date to today
+        dateInput.value = new Date().toISOString().split('T')[0];
+
+        // Toggle Lead Time field based on "Was Booked?"
+        function toggleLeadTime() {
+            if (wasBookedYes.checked) {
+                leadTimeField.classList.remove('hidden');
+            } else {
+                leadTimeField.classList.add('hidden');
+                document.getElementById('leadTime').value = ''; // Clear lead time if not booked
+            }
+        }
+
+        wasBookedYes.addEventListener('change', toggleLeadTime);
+        wasBookedNo.addEventListener('change', toggleLeadTime);
+        toggleLeadTime(); // Call on initial load
+
+        priceLogForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(priceLogForm);
+            const data = Object.fromEntries(formData.entries());
+
+            // Convert our_listed_price to float
+            data.listed_price = parseFloat(data.listed_price);
+
+            try {
+                const response = await fetch('/log_entry', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to log entry');
+                }
+
+                showToast('Entry logged successfully!');
+                priceLogForm.reset();
+                dateInput.value = new Date().toISOString().split('T')[0]; // Reset date to today
+                wasBookedYes.checked = true; // Reset radio button
+                toggleLeadTime(); // Adjust lead time visibility
+
+            } catch (error) {
+                console.error('Error logging price entry:', error);
+                showToast(`Error: ${error.message}`, true);
+            }
+        });
+
+        function showToast(message, isError = false) {
+            toastNotification.textContent = message;
+            if (isError) {
+                toastNotification.classList.remove('bg-green-500');
+                toastNotification.classList.add('bg-red-500');
+            } else {
+                toastNotification.classList.remove('bg-red-500');
+                toastNotification.classList.add('bg-green-500');
+            }
+            toastNotification.classList.remove('hidden');
+            toastNotification.classList.add('opacity-100');
+            setTimeout(() => {
+                toastNotification.classList.remove('opacity-100');
+                toastNotification.classList.add('opacity-0');
+                setTimeout(() => toastNotification.classList.add('hidden'), 300);
+            }, 3000);
+        }
+    });
+</script>
+{% endblock %}

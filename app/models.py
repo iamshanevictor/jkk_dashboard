@@ -62,6 +62,8 @@ class PriceLog(db.Model):
     final_price_paid = db.Column(db.Float, nullable=True)
     notes = db.Column(db.Text, nullable=True)
     day_of_week = db.Column(db.String(10), nullable=False)
+    lead_time = db.Column(db.Integer, nullable=True)
+    season_flag = db.Column(db.String(50), nullable=True)
 
     property = db.relationship('Property', backref=db.backref('price_logs', lazy=True))
 
@@ -85,5 +87,7 @@ class PriceLog(db.Model):
             'was_booked': self.was_booked,
             'final_price_paid': self.final_price_paid,
             'notes': self.notes,
-            'day_of_week': self.day_of_week
+            'day_of_week': self.day_of_week,
+            'lead_time': self.lead_time,
+            'season_flag': self.season_flag
         }

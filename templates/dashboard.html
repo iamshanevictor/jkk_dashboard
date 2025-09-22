@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Precision Pricing - Dashboard{% endblock %}
+
+{% block content %}
+    <h2 class="text-2xl font-semibold mb-6 text-gray-800">Pricing Dashboard</h2>
+
+    <!-- Summary Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-blue-100 p-6 rounded-lg shadow-md">
+            <h3 class="text-lg font-semibold text-blue-800">Total Entries</h3>
+            <p class="text-3xl font-bold text-blue-600 mt-2">{{ summary_stats.total_entries }}</p>
+        </div>
+        <div class="bg-green-100 p-6 rounded-lg shadow-md">
+            <h3 class="text-lg font-semibold text-green-800">Booked Entries</h3>
+            <p class="text-3xl font-bold text-green-600 mt-2">{{ summary_stats.booked_entries }}</p>
+        </div>
+        <div class="bg-red-100 p-6 rounded-lg shadow-md">
+            <h3 class="text-lg font-semibold text-red-800">Not Booked Entries</h3>
+            <p class="text-3xl font-bold text-red-600 mt-2">{{ summary_stats.not_booked_entries }}</p>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Average Listed Price: ₱{{ summary_stats.avg_listed_price }}</h3>
+    </div>
+
+    <!-- Recent Entries Table -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Pricing Entries</h3>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit ID</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Listed Price (₱)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booked?</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lead Time</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Day</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Season</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for entry in dashboard_data %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ entry.date }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ entry.unit_id }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">₱{{ entry.listed_price }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ entry.was_booked }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ entry.lead_time }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ entry.day_of_week }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ entry.season_flag }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-4 text-center text-gray-500">No pricing entries available.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
