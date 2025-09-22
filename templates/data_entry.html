@@ -2,49 +2,229 @@
 
 {% block title %}Precision Pricing - Data Entry{% endblock %}
 
+{% block head_extra %}
+<style>
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 2px;
+    }
+    
+    .calendar-day {
+        aspect-ratio: 1;
+        min-height: 60px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+        font-size: 14px;
+        border-radius: 8px;
+    }
+    
+    .calendar-day:hover {
+        transform: scale(1.05);
+        z-index: 10;
+    }
+    
+    .calendar-day.other-month {
+        color: #9CA3AF;
+        background-color: #F9FAFB;
+    }
+    
+    .calendar-day.today {
+        border: 2px solid #3B82F6;
+        font-weight: bold;
+    }
+    
+    .calendar-day.selected {
+        background-color: #3B82F6;
+        color: white;
+        font-weight: bold;
+    }
+    
+    .calendar-day.booked {
+        background-color: #10B981;
+        color: white;
+    }
+    
+    .calendar-day.not-booked {
+        background-color: #EF4444;
+        color: white;
+    }
+    
+    .calendar-day.range-start {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+    
+    .calendar-day.range-end {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+    
+    .calendar-day.range-middle {
+        border-radius: 0;
+        background-color: #93C5FD;
+    }
+    
+    .price-indicator {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        font-size: 10px;
+        background-color: rgba(0,0,0,0.7);
+        color: white;
+        padding: 1px 3px;
+        border-radius: 3px;
+    }
+    
+    @media (max-width: 768px) {
+        .calendar-day {
+            min-height: 45px;
+            font-size: 12px;
+        }
+        .price-indicator {
+            font-size: 8px;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-    <h2 class="text-2xl font-semibold mb-6 text-gray-800">Daily Price Log Entry</h2>
+    <h2 class="text-2xl font-semibold mb-6 text-gray-800">Booking Calendar</h2>
+    <p class="text-gray-600 mb-6 text-center">Select dates to record pricing and booking information. Click and drag to select multiple dates.</p>
 
-    <div class="max-w-md mx-auto bg-gray-50 p-6 rounded-lg shadow-inner">
-        <form id="priceLogForm" class="space-y-4">
-            <div>
-                <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
-                <input type="date" id="date" name="date" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
-            </div>
-
-            <div>
-                <label for="unitId" class="block text-sm font-medium text-gray-700">Unit ID</label>
-                <select id="unitId" name="unit_id" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md" required>
-                    <option value="">Select Unit ID</option>
+    <!-- Unit Selection -->
+    <div class="max-w-sm mx-auto mb-8">
+        <label for="unitSelect" class="block text-sm font-medium text-gray-700 mb-2">
+            Select Property Unit <span class="text-red-500" aria-label="required">*</span>
+        </label>
+        <select id="unitSelect" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-md transition-colors duration-200">
+            <option value="">Choose a unit to get started</option>
                     {% for unit_id in unit_ids %}
                     <option value="{{ unit_id }}">{{ unit_id }}</option>
                     {% endfor %}
                 </select>
             </div>
 
-            <div>
-                <label for="listedPrice" class="block text-sm font-medium text-gray-700">Listed Price (₱)</label>
-                <input type="number" id="listedPrice" name="listed_price" step="0.01" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
+    <!-- Calendar Section -->
+    <div id="calendar-section" class="hidden">
+        <!-- Calendar Header -->
+        <div class="max-w-4xl mx-auto mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <button id="prev-month" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-200" aria-label="Previous month">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <h3 id="calendar-month-year" class="text-xl font-semibold text-gray-800"></h3>
+                <button id="next-month" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-200" aria-label="Next month">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
             </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Was Booked?</label>
-                <div class="mt-1 flex items-center space-x-4">
-                    <input type="radio" id="wasBookedYes" name="was_booked" value="Y" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300" checked>
-                    <label for="wasBookedYes" class="ml-2 block text-sm text-gray-900">Yes</label>
-                    <input type="radio" id="wasBookedNo" name="was_booked" value="N" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300">
-                    <label for="wasBookedNo" class="ml-2 block text-sm text-gray-900">No</label>
+            <!-- Legend -->
+            <div class="flex flex-wrap justify-center gap-4 text-sm mb-4">
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-blue-500 rounded mr-2"></div>
+                    <span>Selected</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-green-500 rounded mr-2"></div>
+                    <span>Booked</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-red-500 rounded mr-2"></div>
+                    <span>Not Booked</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-gray-300 rounded mr-2"></div>
+                    <span>Available</span>
+                </div>
                 </div>
             </div>
 
-            <div id="leadTimeField">
-                <label for="leadTime" class="block text-sm font-medium text-gray-700">Lead Time (days, optional)</label>
-                <input type="number" id="leadTime" name="lead_time" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+        <!-- Calendar Grid -->
+        <div class="max-w-4xl mx-auto mb-8">
+            <div class="bg-white rounded-lg shadow-lg p-4">
+                <!-- Day Headers -->
+                <div class="calendar-grid mb-2">
+                    <div class="text-center font-semibold text-gray-600 py-2">Sun</div>
+                    <div class="text-center font-semibold text-gray-600 py-2">Mon</div>
+                    <div class="text-center font-semibold text-gray-600 py-2">Tue</div>
+                    <div class="text-center font-semibold text-gray-600 py-2">Wed</div>
+                    <div class="text-center font-semibold text-gray-600 py-2">Thu</div>
+                    <div class="text-center font-semibold text-gray-600 py-2">Fri</div>
+                    <div class="text-center font-semibold text-gray-600 py-2">Sat</div>
+                </div>
+                
+                <!-- Calendar Days -->
+                <div id="calendar-grid" class="calendar-grid"></div>
+            </div>
+        </div>
+
+        <!-- Selection Summary -->
+        <div id="selection-summary" class="hidden max-w-2xl mx-auto mb-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
+            <h4 class="text-lg font-semibold text-blue-800 mb-4">Selected Dates Summary</h4>
+            <div id="selected-dates-list" class="mb-4"></div>
+            <p class="text-sm text-blue-600 mb-4">Click "Set Pricing & Booking Info" to configure details for all selected dates.</p>
+            <button id="configure-dates-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                Set Pricing & Booking Info
+            </button>
+        </div>
+
+        <!-- Bulk Entry Modal -->
+        <div id="bulk-entry-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg max-w-md w-full max-h-screen overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">Bulk Entry for Selected Dates</h3>
+                        <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <form id="bulk-entry-form" class="space-y-4">
+                        <div>
+                            <label for="bulk-price" class="block text-sm font-medium text-gray-700 mb-2">
+                                Listed Price (₱) <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number" id="bulk-price" name="bulk-price" step="0.01" min="0" required
+                                   class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Booking Status <span class="text-red-500">*</span>
+                            </label>
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="radio" name="bulk-booking" value="booked" class="mr-2">
+                                    <span>All dates are booked</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="bulk-booking" value="not-booked" class="mr-2">
+                                    <span>All dates are not booked</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="bulk-booking" value="mixed" class="mr-2" checked>
+                                    <span>I'll set individual booking status</span>
+                                </label>
+                            </div>
             </div>
 
             <div>
-                <label for="seasonFlag" class="block text-sm font-medium text-gray-700">Season Flag</label>
-                <select id="seasonFlag" name="season_flag" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md" required>
+                            <label for="bulk-season" class="block text-sm font-medium text-gray-700 mb-2">
+                                Season Flag <span class="text-red-500">*</span>
+                            </label>
+                            <select id="bulk-season" name="bulk-season" required class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <option value="">Select Season</option>
                     <option value="Summer">Summer</option>
                     <option value="Fall">Fall</option>
@@ -53,10 +233,18 @@
                 </select>
             </div>
 
-            <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Log Entry
+                        <div class="flex justify-end space-x-3 pt-4">
+                            <button type="button" id="cancel-bulk" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                Cancel
+                            </button>
+                            <button type="submit" id="save-bulk" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                Save All Dates
             </button>
+                        </div>
         </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="toastNotification" class="hidden fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg transition-opacity duration-300 opacity-0">
@@ -67,80 +255,399 @@
 {% block scripts_extra %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const priceLogForm = document.getElementById('priceLogForm');
-        const dateInput = document.getElementById('date');
-        const wasBookedYes = document.getElementById('wasBookedYes');
-        const wasBookedNo = document.getElementById('wasBookedNo');
-        const leadTimeField = document.getElementById('leadTimeField');
-        const toastNotification = document.getElementById('toastNotification');
+        // Calendar state
+        let currentDate = new Date();
+        let selectedDates = new Set();
+        let existingBookings = new Map(); // Store existing booking data
+        let currentUnit = null;
+        let isSelecting = false;
+        let selectionStart = null;
 
-        // Set default date to today
-        dateInput.value = new Date().toISOString().split('T')[0];
+        // Elements
+        const unitSelect = document.getElementById('unitSelect');
+        const calendarSection = document.getElementById('calendar-section');
+        const calendarGrid = document.getElementById('calendar-grid');
+        const monthYearDisplay = document.getElementById('calendar-month-year');
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+        const selectionSummary = document.getElementById('selection-summary');
+        const selectedDatesList = document.getElementById('selected-dates-list');
+        const configureDatesBtn = document.getElementById('configure-dates-btn');
+        const bulkEntryModal = document.getElementById('bulk-entry-modal');
+        const bulkEntryForm = document.getElementById('bulk-entry-form');
+        const closeModalBtn = document.getElementById('close-modal');
+        const cancelBulkBtn = document.getElementById('cancel-bulk');
 
-        // Toggle Lead Time field based on "Was Booked?"
-        function toggleLeadTime() {
-            if (wasBookedYes.checked) {
-                leadTimeField.classList.remove('hidden');
+        // Month names
+        const monthNames = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+
+        // Unit selection handler
+        unitSelect.addEventListener('change', function() {
+            currentUnit = this.value;
+            if (currentUnit) {
+                calendarSection.classList.remove('hidden');
+                loadExistingBookings();
+                renderCalendar();
             } else {
-                leadTimeField.classList.add('hidden');
-                document.getElementById('leadTime').value = ''; // Clear lead time if not booked
-            }
-        }
-
-        wasBookedYes.addEventListener('change', toggleLeadTime);
-        wasBookedNo.addEventListener('change', toggleLeadTime);
-        toggleLeadTime(); // Call on initial load
-
-        priceLogForm.addEventListener('submit', async function(event) {
-            event.preventDefault();
-
-            const formData = new FormData(priceLogForm);
-            const data = Object.fromEntries(formData.entries());
-
-            // Convert our_listed_price to float
-            data.listed_price = parseFloat(data.listed_price);
-
-            try {
-                const response = await fetch('/log_entry', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(data)
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to log entry');
-                }
-
-                showToast('Entry logged successfully!');
-                priceLogForm.reset();
-                dateInput.value = new Date().toISOString().split('T')[0]; // Reset date to today
-                wasBookedYes.checked = true; // Reset radio button
-                toggleLeadTime(); // Adjust lead time visibility
-
-            } catch (error) {
-                console.error('Error logging price entry:', error);
-                showToast(`Error: ${error.message}`, true);
+                calendarSection.classList.add('hidden');
+                resetSelection();
             }
         });
 
-        function showToast(message, isError = false) {
-            toastNotification.textContent = message;
-            if (isError) {
-                toastNotification.classList.remove('bg-green-500');
-                toastNotification.classList.add('bg-red-500');
-            } else {
-                toastNotification.classList.remove('bg-red-500');
-                toastNotification.classList.add('bg-green-500');
+        // Calendar navigation
+        prevMonthBtn.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        });
+
+        nextMonthBtn.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        });
+
+        // Load existing bookings for the selected unit
+        async function loadExistingBookings() {
+            if (!currentUnit) return;
+
+            try {
+                // Get existing price logs for this unit
+                const response = await fetch(`/api/unit-bookings/${currentUnit}`);
+                if (response.ok) {
+                    const bookings = await response.json();
+                    existingBookings.clear();
+                    bookings.forEach(booking => {
+                        existingBookings.set(booking.date, booking);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading existing bookings:', error);
             }
-            toastNotification.classList.remove('hidden');
-            toastNotification.classList.add('opacity-100');
-            setTimeout(() => {
-                toastNotification.classList.remove('opacity-100');
-                toastNotification.classList.add('opacity-0');
-                setTimeout(() => toastNotification.classList.add('hidden'), 300);
-            }, 3000);
         }
+
+        // Render calendar
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            monthYearDisplay.textContent = `${monthNames[month]} ${year}`;
+            
+            // Clear calendar
+            calendarGrid.innerHTML = '';
+            
+            // Get first day of month and number of days
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDayOfWeek = firstDay.getDay();
+            
+            // Add empty cells for days before month starts
+            for (let i = 0; i < startingDayOfWeek; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day other-month';
+                const prevMonthDay = new Date(year, month, 1 - (startingDayOfWeek - i));
+                emptyDay.textContent = prevMonthDay.getDate();
+                calendarGrid.appendChild(emptyDay);
+            }
+            
+            // Add days of current month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isToday = dateStr === new Date().toISOString().split('T')[0];
+                
+                dayElement.className = 'calendar-day bg-gray-100 hover:bg-gray-200';
+                dayElement.textContent = day;
+                dayElement.dataset.date = dateStr;
+                
+                // Apply styling based on state
+                if (isToday) {
+                    dayElement.classList.add('today');
+                }
+                
+                if (selectedDates.has(dateStr)) {
+                    dayElement.classList.remove('bg-gray-100');
+                    dayElement.classList.add('selected');
+                }
+                
+                // Check if date has existing booking data
+                if (existingBookings.has(dateStr)) {
+                    const booking = existingBookings.get(dateStr);
+                    dayElement.classList.remove('bg-gray-100');
+                    if (booking.was_booked) {
+                        dayElement.classList.add('booked');
+                    } else {
+                        dayElement.classList.add('not-booked');
+                    }
+                    
+                    // Add price indicator
+                    const priceIndicator = document.createElement('div');
+                    priceIndicator.className = 'price-indicator';
+                    priceIndicator.textContent = `₱${booking.our_listed_price}`;
+                    dayElement.appendChild(priceIndicator);
+                }
+                
+                // Add click handlers
+                dayElement.addEventListener('mousedown', handleDateMouseDown);
+                dayElement.addEventListener('mouseenter', handleDateMouseEnter);
+                dayElement.addEventListener('mouseup', handleDateMouseUp);
+                
+                calendarGrid.appendChild(dayElement);
+            }
+            
+            // Add days from next month to fill grid
+            const totalCells = calendarGrid.children.length;
+            const remainingCells = 42 - totalCells; // 6 rows × 7 days
+            for (let i = 1; i <= remainingCells; i++) {
+                const nextMonthDay = document.createElement('div');
+                nextMonthDay.className = 'calendar-day other-month';
+                nextMonthDay.textContent = i;
+                calendarGrid.appendChild(nextMonthDay);
+            }
+        }
+
+        // Date selection handlers
+        function handleDateMouseDown(event) {
+            if (!event.target.dataset.date) return;
+            
+            isSelecting = true;
+            selectionStart = event.target.dataset.date;
+            
+            // Toggle selection for single click
+            if (selectedDates.has(selectionStart)) {
+                selectedDates.delete(selectionStart);
+            } else {
+                selectedDates.add(selectionStart);
+            }
+            
+            updateCalendarDisplay();
+            updateSelectionSummary();
+            event.preventDefault();
+        }
+
+        function handleDateMouseEnter(event) {
+            if (!isSelecting || !event.target.dataset.date) return;
+            
+            // Clear current selection
+            selectedDates.clear();
+            
+            // Select range from start to current
+            const currentDateStr = event.target.dataset.date;
+            let startDate = new Date(selectionStart);
+            let endDate = new Date(currentDateStr);
+            
+            if (startDate > endDate) {
+                const temp = startDate;
+                startDate = endDate;
+                endDate = temp;
+            }
+            
+            let date = new Date(startDate);
+            while (date <= endDate) {
+                const dateStr = date.toISOString().split('T')[0];
+                selectedDates.add(dateStr);
+                date.setDate(date.getDate() + 1);
+            }
+            
+            updateCalendarDisplay();
+            updateSelectionSummary();
+        }
+
+        function handleDateMouseUp() {
+            isSelecting = false;
+            selectionStart = null;
+        }
+
+        // Prevent text selection during drag
+        document.addEventListener('selectstart', function(event) {
+            if (isSelecting) {
+                event.preventDefault();
+            }
+        });
+
+        function updateCalendarDisplay() {
+            const dayElements = calendarGrid.querySelectorAll('.calendar-day[data-date]');
+            dayElements.forEach(element => {
+                const dateStr = element.dataset.date;
+                
+                // Reset classes
+                element.className = 'calendar-day';
+                
+                // Apply base styling
+                if (!existingBookings.has(dateStr)) {
+                    element.classList.add('bg-gray-100', 'hover:bg-gray-200');
+                }
+                
+                // Apply selection styling
+                if (selectedDates.has(dateStr)) {
+                    element.classList.remove('bg-gray-100');
+                    element.classList.add('selected');
+                }
+                
+                // Apply existing booking styling
+                if (existingBookings.has(dateStr)) {
+                    const booking = existingBookings.get(dateStr);
+                    if (booking.was_booked) {
+                        element.classList.add('booked');
+                    } else {
+                        element.classList.add('not-booked');
+                    }
+                }
+                
+                // Today styling
+                const today = new Date().toISOString().split('T')[0];
+                if (dateStr === today) {
+                    element.classList.add('today');
+                }
+            });
+        }
+
+        function updateSelectionSummary() {
+            if (selectedDates.size === 0) {
+                selectionSummary.classList.add('hidden');
+                return;
+            }
+            
+            selectionSummary.classList.remove('hidden');
+            
+            const sortedDates = Array.from(selectedDates).sort();
+            const dateRanges = getDateRanges(sortedDates);
+            
+            selectedDatesList.innerHTML = dateRanges.map(range => {
+                if (range.start === range.end) {
+                    return `<span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm mr-2 mb-1">${formatDate(range.start)}</span>`;
+                } else {
+                    return `<span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm mr-2 mb-1">${formatDate(range.start)} - ${formatDate(range.end)}</span>`;
+                }
+            }).join('');
+        }
+
+        function getDateRanges(dates) {
+            if (dates.length === 0) return [];
+            
+            const ranges = [];
+            let start = dates[0];
+            let end = dates[0];
+            
+            for (let i = 1; i < dates.length; i++) {
+                const current = new Date(dates[i]);
+                const previous = new Date(dates[i - 1]);
+                
+                if (current.getTime() - previous.getTime() === 86400000) { // 1 day in milliseconds
+                    end = dates[i];
+                } else {
+                    ranges.push({ start, end });
+                    start = dates[i];
+                    end = dates[i];
+                }
+            }
+            
+            ranges.push({ start, end });
+            return ranges;
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function resetSelection() {
+            selectedDates.clear();
+            updateSelectionSummary();
+        }
+
+        // Modal handlers
+        configureDatesBtn.addEventListener('click', () => {
+            bulkEntryModal.classList.remove('hidden');
+        });
+
+        closeModalBtn.addEventListener('click', closeModal);
+        cancelBulkBtn.addEventListener('click', closeModal);
+
+        function closeModal() {
+            bulkEntryModal.classList.add('hidden');
+            bulkEntryForm.reset();
+        }
+
+        // Bulk entry form submission
+        bulkEntryForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(bulkEntryForm);
+            const bulkPriceRaw = formData.get('bulk-price');
+            const bulkPrice = parseFloat(bulkPriceRaw);
+            const bulkBooking = formData.get('bulk-booking');
+            const bulkSeason = formData.get('bulk-season');
+            
+            // Debug logging
+            console.log('Form data:', {
+                bulkPriceRaw,
+                bulkPrice,
+                bulkBooking,
+                bulkSeason
+            });
+            
+            // Validate form data
+            if (!bulkPriceRaw || !bulkPrice || bulkPrice <= 0) {
+                showToast(`Please enter a valid price (received: "${bulkPriceRaw}")`, 'error');
+                return;
+            }
+            
+            if (!bulkBooking) {
+                showToast('Please select a booking status', 'error');
+                return;
+            }
+            
+            if (!bulkSeason) {
+                showToast('Please select a season', 'error');
+                return;
+            }
+            
+            const entries = Array.from(selectedDates).map(date => ({
+                unit_id: currentUnit,
+                date: date,
+                listed_price: bulkPrice,
+                was_booked: bulkBooking === 'booked' ? 'Y' : bulkBooking === 'not-booked' ? 'N' : 'Y', // Default to Y for mixed
+                season_flag: bulkSeason,
+                lead_time: null // Optional field
+            }));
+            
+            try {
+                // Save all entries
+                for (const entry of entries) {
+                    console.log('Sending entry:', entry); // Debug log
+                    
+                    const response = await fetch('/log_entry', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(entry)
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || `Failed to save entry for ${entry.date} (${response.status})`);
+                    }
+                    
+                    const result = await response.json();
+                    console.log('Entry saved:', result);
+                }
+                
+                showToast(`Successfully saved ${entries.length} price entries`, 'success');
+                closeModal();
+                resetSelection();
+                await loadExistingBookings(); // Wait for reload
+                renderCalendar();
+                
+            } catch (error) {
+                console.error('Error saving bulk entries:', error);
+                showToast(`Error: ${error.message}`, 'error');
+            }
+        });
+
+        // Initialize calendar
+        renderCalendar();
     });
 </script>
 {% endblock %}

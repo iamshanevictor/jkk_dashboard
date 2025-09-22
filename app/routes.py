@@ -44,16 +44,30 @@ def manage():
 @main.route('/log_entry', methods=['GET', 'POST'])
 def log_entry():
     if request.method == 'POST':
-        data = request.get_json()
-        unit_id = data.get('unit_id')
-        date_str = data.get('date')
-        our_listed_price = data.get('listed_price')
-        was_booked = data.get('was_booked') == 'Y'
-        lead_time = data.get('lead_time')
-        season_flag = data.get('season_flag')
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify({'error': 'No JSON data provided'}), 400
+                
+            unit_id = data.get('unit_id')
+            date_str = data.get('date')
+            our_listed_price = data.get('listed_price')
+            was_booked_raw = data.get('was_booked')
+            was_booked = was_booked_raw == 'Y' if was_booked_raw else False
+            lead_time = data.get('lead_time')
+            season_flag = data.get('season_flag')
+            
+            # Debug logging
+            print(f"Received data: {data}")
+            
+        except Exception as e:
+            return jsonify({'error': f'Invalid JSON data: {str(e)}'}), 400
 
-        if not all([unit_id, date_str, our_listed_price, was_booked is not None, season_flag]):
+        if not all([unit_id, date_str, our_listed_price, season_flag]):
             return jsonify({'error': 'Missing required fields'}), 400
+        
+        if data.get('was_booked') is None:
+            return jsonify({'error': 'Booking status is required'}), 400
 
         property_obj = Property.query.filter_by(unit_id=unit_id).first()
         if not property_obj:
@@ -73,23 +87,29 @@ def log_entry():
         else:
             lead_time = None
 
-        new_log = PriceLog(
-            property_id=property_obj.id,
-            date=date_obj,
-            our_listed_price=our_listed_price,
-            was_booked=was_booked,
-            lead_time=lead_time,
-            day_of_week=date_obj.strftime('%A'),
-            season_flag=season_flag,
-            # For simplicity, comp_avg_price and final_price_paid are omitted as they are not in the new form spec.
-            # They can be added back if needed in the future or handled as part of the original log-price route.
-            comp_avg_price=0.0, # Default value
-            final_price_paid=our_listed_price if was_booked else None
-        )
-        db.session.add(new_log)
-        db.session.commit()
+        try:
+            new_log = PriceLog(
+                property_id=property_obj.id,
+                date=date_obj,
+                our_listed_price=our_listed_price,
+                was_booked=was_booked,
+                lead_time=lead_time,
+                day_of_week=date_obj.strftime('%A'),
+                season_flag=season_flag,
+                # For simplicity, comp_avg_price and final_price_paid are omitted as they are not in the new form spec.
+                # They can be added back if needed in the future or handled as part of the original log-price route.
+                comp_avg_price=0.0, # Default value
+                final_price_paid=our_listed_price if was_booked else None
+            )
+            db.session.add(new_log)
+            db.session.commit()
 
-        return jsonify({'message': 'Price log entry created successfully'}), 201
+            return jsonify({'message': 'Price log entry created successfully'}), 201
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"Database error: {str(e)}")
+            return jsonify({'error': f'Database error: {str(e)}'}), 500
     
     properties = Property.query.all()
     unit_ids = [p.unit_id for p in properties]
@@ -137,6 +157,28 @@ def dashboard():
 def get_properties_for_dropdown():
     properties = Property.query.with_entities(Property.unit_id, Property.cluster_id).all()
     return jsonify([{'unit_id': p.unit_id, 'cluster_id': p.cluster_id} for p in properties])
+
+@data_entry_bp.route('/api/unit-bookings/<string:unit_id>', methods=['GET'])
+def get_unit_bookings(unit_id):
+    """Get existing booking data for a specific unit"""
+    property_obj = Property.query.filter_by(unit_id=unit_id).first()
+    if not property_obj:
+        return jsonify({'error': f'Property with unit_id {unit_id} not found'}), 404
+    
+    # Get all price logs for this property
+    price_logs = PriceLog.query.filter_by(property_id=property_obj.id).all()
+    
+    bookings = []
+    for log in price_logs:
+        bookings.append({
+            'date': log.date.isoformat(),
+            'our_listed_price': log.our_listed_price,
+            'was_booked': log.was_booked,
+            'season_flag': log.season_flag,
+            'lead_time': log.lead_time
+        })
+    
+    return jsonify(bookings)
 
 @data_entry_bp.route('/api/log-price', methods=['POST'])
 def log_price():

@@ -1,119 +1,51 @@
 {% extends "base.html" %}
 
-{% block title %}Precision Pricing - Quick Log{% endblock %}
+{% block title %}Precision Pricing Initiative - Dashboard Overview{% endblock %}
 
 {% block content %}
-        <h2 class="text-2xl font-semibold mb-6 text-gray-800">Quick Price Entry</h2>
-        <form id="priceLogForm" class="space-y-4 max-w-md mx-auto">
-            <div>
-                <label for="unitId" class="block text-sm font-medium text-gray-700">Unit ID</label>
-                <select id="unitId" name="unit_id" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md" required>
-                    <option value="">Select a Unit</option>
-                </select>
-            </div>
-
-            <div>
-                <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
-                <input type="date" id="date" name="date" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
-            </div>
-
-            <div>
-                <label for="ourPrice" class="block text-sm font-medium text-gray-700">Our New Price ($)</label>
-                <input type="number" id="ourPrice" name="our_price" step="0.01" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
-            </div>
-
-            <div>
-                <label for="compAvgPrice" class="block text-sm font-medium text-gray-700">Comp Avg Price ($)</label>
-                <input type="number" id="compAvgPrice" name="comp_avg_price" step="0.01" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
-            </div>
-
-            <div>
-                <label for="notes" class="block text-sm font-medium text-gray-700">Notes</label>
-                <textarea id="notes" name="notes" rows="3" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
-            </div>
-
-            <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Log Entry
-            </button>
-        </form>
-
-        <!-- Success Toast Notification -->
-        <div id="successToast" class="hidden fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg transition-opacity duration-300 opacity-0">
-            Entry logged! 
+    <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">Precision Pricing Initiative</h1>
+        <p class="text-xl text-gray-600 mb-8">Optimize your Airbnb pricing with data-driven insights</p>
+        
+        <!-- Quick Action Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            <a href="/log_entry" class="group bg-blue-50 hover:bg-blue-100 p-6 rounded-lg shadow-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" aria-describedby="log-entry-desc">
+                <div class="text-3xl mb-3">📝</div>
+                <h3 class="text-lg font-semibold text-blue-800 mb-2">Log Prices</h3>
+                <p id="log-entry-desc" class="text-sm text-blue-600">Record daily pricing decisions and booking outcomes</p>
+            </a>
+            
+            <a href="/insights" class="group bg-purple-50 hover:bg-purple-100 p-6 rounded-lg shadow-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2" aria-describedby="analytics-desc">
+                <div class="text-3xl mb-3">📊</div>
+                <h3 class="text-lg font-semibold text-purple-800 mb-2">Analytics</h3>
+                <p id="analytics-desc" class="text-sm text-purple-600">View booking rates, pricing trends, and missed opportunities</p>
+            </a>
+            
+            <a href="/dashboard" class="group bg-green-50 hover:bg-green-100 p-6 rounded-lg shadow-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2" aria-describedby="dashboard-desc">
+                <div class="text-3xl mb-3">📈</div>
+                <h3 class="text-lg font-semibold text-green-800 mb-2">Dashboard</h3>
+                <p id="dashboard-desc" class="text-sm text-green-600">Summary statistics and recent pricing entries</p>
+            </a>
+            
+            <a href="/manage" class="group bg-orange-50 hover:bg-orange-100 p-6 rounded-lg shadow-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2" aria-describedby="settings-desc">
+                <div class="text-3xl mb-3">⚙️</div>
+                <h3 class="text-lg font-semibold text-orange-800 mb-2">Settings</h3>
+                <p id="settings-desc" class="text-sm text-orange-600">Configure property clusters and manage units</p>
+            </a>
         </div>
-{% endblock %}
+    </div>
 
-{% block scripts_extra %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const unitIdSelect = document.getElementById('unitId');
-            const dateInput = document.getElementById('date');
-            const priceLogForm = document.getElementById('priceLogForm');
-            const successToast = document.getElementById('successToast');
-
-            // Set today's date as default
-            dateInput.value = new Date().toISOString().split('T')[0];
-
-            // Fetch properties for the Unit ID dropdown
-            fetch('/api/properties')
-                .then(response => response.json())
-                .then(data => {
-                    data.forEach(prop => {
-                        const option = document.createElement('option');
-                        option.value = prop.unit_id;
-                        option.textContent = `${prop.unit_id} (${prop.cluster_id})`;
-                        unitIdSelect.appendChild(option);
-                    });
-                })
-                .catch(error => console.error('Error fetching properties:', error));
-
-            // Handle form submission
-            priceLogForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-
-                const formData = new FormData(priceLogForm);
-                const data = Object.fromEntries(formData.entries());
-
-                fetch('/api/log-price', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        unit_id: data.unit_id,
-                        date: data.date,
-                        our_price: parseFloat(data.our_price),
-                        comp_avg_price: parseFloat(data.comp_avg_price),
-                        notes: data.notes
-                    })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(err => Promise.reject(err));
-                    }
-                    return response.json();
-                })
-                .then(result => {
-                    console.log('Success:', result);
-                    // Show success toast
-                    successToast.classList.remove('hidden');
-                    successToast.classList.add('opacity-100');
-                    setTimeout(() => {
-                        successToast.classList.remove('opacity-100');
-                        successToast.classList.add('opacity-0');
-                        setTimeout(() => successToast.classList.add('hidden'), 300); // Hide after fade out
-                    }, 2000);
-
-                    // Clear form (except Unit ID and Date, which can be reused)
-                    document.getElementById('ourPrice').value = '';
-                    document.getElementById('compAvgPrice').value = '';
-                    document.getElementById('notes').value = '';
-                })
-                .catch(error => {
-                    console.error('Error logging price:', error);
-                    alert(`Error: ${error.error || 'Could not log price.'}`);
-                });
-            });
-        });
-    </script>
+    <!-- Quick Stats Section -->
+    <div class="bg-gray-50 rounded-lg p-6 mt-8">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4 text-center">Get Started</h2>
+        <div class="text-center">
+            <p class="text-gray-600 mb-4">Start optimizing your pricing strategy today</p>
+            <a href="/log_entry" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                Log Your First Price Entry
+                <svg class="ml-2 -mr-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+            </a>
+        </div>
+    </div>
 {% endblock %}

@@ -20,15 +20,40 @@
     <header class="bg-blue-600 text-white p-4 shadow-md">
         <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-2xl font-bold">Precision Pricing Initiative</h1>
-            <nav>
-                <a href="/" class="text-white hover:text-blue-200 mx-2">Home</a>
-                <a href="/log_entry" class="text-white hover:text-blue-200 mx-2">Data Entry</a>
-                <a href="/dashboard" class="text-white hover:text-blue-200 mx-2">Dashboard</a>
-                <a href="/insights" class="text-white hover:text-blue-200 mx-2">View Insights</a>
-                <a href="/manage" class="text-white hover:text-blue-200 mx-2">Manage Data</a>
+            
+            <!-- Desktop Navigation -->
+            <nav class="hidden md:flex space-x-1" role="navigation" aria-label="Main navigation">
+                <a href="/" class="nav-link text-white hover:text-blue-200 hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600" aria-current="page">Overview</a>
+                <a href="/log_entry" class="nav-link text-white hover:text-blue-200 hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600">Log Prices</a>
+                <a href="/insights" class="nav-link text-white hover:text-blue-200 hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600">Analytics</a>
+                <a href="/manage" class="nav-link text-white hover:text-blue-200 hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600">Settings</a>
             </nav>
+
+            <!-- Mobile menu button -->
+            <button type="button" class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-white hover:text-blue-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white transition-colors duration-200" aria-controls="mobile-menu" aria-expanded="false" id="mobile-menu-button">
+                <span class="sr-only">Open main menu</span>
+                <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+                <svg class="hidden h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Mobile menu -->
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="/" class="mobile-nav-link text-white hover:text-blue-200 hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600">Overview</a>
+                <a href="/log_entry" class="mobile-nav-link text-white hover:text-blue-200 hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600">Log Prices</a>
+                <a href="/insights" class="mobile-nav-link text-white hover:text-blue-200 hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600">Analytics</a>
+                <a href="/manage" class="mobile-nav-link text-white hover:text-blue-200 hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600">Settings</a>
+            </div>
         </div>
     </header>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2" aria-live="polite" aria-atomic="true"></div>
 
     <main class="container mx-auto mt-8 p-4 bg-white rounded-lg shadow-lg flex-grow">
         {% block content %}{% endblock %}
@@ -40,7 +65,89 @@
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    
+    <script>
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', function() {
+                    const isExpanded = mobileMenuButton.getAttribute('aria-expanded') === 'true';
+                    mobileMenuButton.setAttribute('aria-expanded', !isExpanded);
+                    mobileMenu.classList.toggle('hidden');
+                    
+                    // Toggle hamburger/close icons
+                    const hamburgerIcon = mobileMenuButton.querySelector('svg:first-child');
+                    const closeIcon = mobileMenuButton.querySelector('svg:last-child');
+                    hamburgerIcon.classList.toggle('hidden');
+                    closeIcon.classList.toggle('hidden');
+                });
+            }
+
+            // Set active navigation item
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.nav-link, .mobile-nav-link');
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('bg-blue-700');
+                    if (link.classList.contains('nav-link')) {
+                        link.setAttribute('aria-current', 'page');
+                    }
+                }
+            });
+        });
+
+        // Unified Toast Notification System
+        function showToast(message, type = 'success', duration = 4000) {
+            const toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) return;
+
+            const toastId = 'toast-' + Date.now();
+            const toast = document.createElement('div');
+            toast.id = toastId;
+            toast.className = `max-w-sm w-full shadow-lg rounded-lg pointer-events-auto transform transition-all duration-300 ease-in-out translate-x-full opacity-0`;
+            
+            const bgColor = type === 'success' ? 'bg-green-500' : 
+                           type === 'error' ? 'bg-red-500' : 
+                           type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500';
+            
+            toast.innerHTML = `
+                <div class="${bgColor} text-white px-4 py-3 rounded-lg flex items-center justify-between">
+                    <div class="flex items-center">
+                        <span class="text-sm font-medium">${message}</span>
+                    </div>
+                    <button onclick="hideToast('${toastId}')" class="ml-3 text-white hover:text-gray-200 focus:outline-none focus:text-gray-200" aria-label="Close notification">
+                        <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+            }, 10);
+            
+            // Auto hide
+            if (duration > 0) {
+                setTimeout(() => hideToast(toastId), duration);
+            }
+        }
+
+        function hideToast(toastId) {
+            const toast = document.getElementById(toastId);
+            if (toast) {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }
+        }
+    </script>
     {% block scripts_extra %}{% endblock %}
 </body>
 </html>
