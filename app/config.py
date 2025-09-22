@@ -4,7 +4,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    @property
+    def SQLALCHEMY_DATABASE_URI(self):
+        database_url = os.environ.get('DATABASE_URL')
+        if database_url:
+            # Replace postgresql:// with postgresql+psycopg:// to use psycopg driver
+            if database_url.startswith('postgresql://'):
+                database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+        return database_url
+    
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
     
@@ -14,7 +22,14 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'postgresql://localhost:5432/airbnb_dashboard'
+    
+    @property
+    def SQLALCHEMY_DATABASE_URI(self):
+        database_url = os.environ.get('DATABASE_URL') or 'postgresql://localhost:5432/airbnb_dashboard'
+        # Replace postgresql:// with postgresql+psycopg:// to use psycopg driver
+        if database_url.startswith('postgresql://'):
+            database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+        return database_url
 
 class ProductionConfig(Config):
     DEBUG = False
