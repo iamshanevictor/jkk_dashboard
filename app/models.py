@@ -63,7 +63,6 @@ class PriceLog(db.Model):
     notes = db.Column(db.Text, nullable=True)
     day_of_week = db.Column(db.String(10), nullable=False)
     lead_time = db.Column(db.Integer, nullable=True)
-    season_flag = db.Column(db.String(50), nullable=True)
 
     property = db.relationship('Property', backref=db.backref('price_logs', lazy=True))
 
@@ -71,6 +70,13 @@ class PriceLog(db.Model):
         super().__init__(**kwargs)
         if self.date and not self.day_of_week:
             self.day_of_week = self.date.strftime('%A')
+        
+        # Automatically calculate lead_time if not provided and date is available
+        if self.date and not self.lead_time:
+            from datetime import date
+            today = date.today()
+            # Lead time is the number of days between today and the check-in date
+            self.lead_time = (self.date - today).days if self.date >= today else 0
 
     def __repr__(self):
         return f'<PriceLog {self.property.unit_id} - {self.date}>'
@@ -88,6 +94,5 @@ class PriceLog(db.Model):
             'final_price_paid': self.final_price_paid,
             'notes': self.notes,
             'day_of_week': self.day_of_week,
-            'lead_time': self.lead_time,
-            'season_flag': self.season_flag
+            'lead_time': self.lead_time
         }

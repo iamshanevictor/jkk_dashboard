@@ -46,11 +46,6 @@
     }
     
     .calendar-day.booked {
-        background-color: #10B981;
-        color: white;
-    }
-    
-    .calendar-day.not-booked {
         background-color: #EF4444;
         color: white;
     }
@@ -80,6 +75,69 @@
         padding: 1px 3px;
         border-radius: 3px;
     }
+
+    /* Unit Card Styles */
+    .unit-card {
+        background: #ffffff;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .unit-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .unit-card:hover {
+        border-color: #3b82f6;
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15);
+    }
+    
+    .unit-card:hover::before {
+        opacity: 1;
+    }
+    
+    .unit-card.selected {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        border-color: #1d4ed8;
+        color: white;
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+    }
+    
+    .unit-card.selected::before {
+        opacity: 0;
+    }
+    
+    .unit-card.selected .text-gray-900 {
+        color: white !important;
+    }
+    
+    .unit-card.selected .text-gray-500 {
+        color: #e0e7ff !important;
+    }
+    
+    .unit-card:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    }
+    
+    @media (max-width: 640px) {
+        .unit-card {
+            padding: 1rem;
+        }
+    }
     
     @media (max-width: 768px) {
         .calendar-day {
@@ -98,16 +156,33 @@
     <p class="text-gray-600 mb-6 text-center">Select dates to record pricing and booking information. Click and drag to select multiple dates.</p>
 
     <!-- Unit Selection -->
-    <div class="max-w-sm mx-auto mb-8">
-        <label for="unitSelect" class="block text-sm font-medium text-gray-700 mb-2">
+    <div class="mb-8">
+        <h3 class="text-lg font-medium text-gray-900 mb-4 text-center">
             Select Property Unit <span class="text-red-500" aria-label="required">*</span>
-        </label>
-        <select id="unitSelect" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-md transition-colors duration-200">
-            <option value="">Choose a unit to get started</option>
-                    {% for unit_id in unit_ids %}
-                    <option value="{{ unit_id }}">{{ unit_id }}</option>
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            {% for unit_id in unit_ids %}
+            <div class="unit-card cursor-pointer border-2 border-gray-200 rounded-lg p-6 text-center transition-all duration-200 hover:border-blue-300 hover:shadow-md" 
+                 data-unit-id="{{ unit_id }}" 
+                 role="button" 
+                 tabindex="0"
+                 aria-label="Select {{ unit_id }}">
+                <div class="text-3xl mb-3">
+                    {% if 'STUDIO' in unit_id.upper() or 'STD' in unit_id.upper() %}
+                        🏨
+                    {% elif 'VILLA' in unit_id.upper() or 'HOUSE' in unit_id.upper() %}
+                        🏡
+                    {% elif 'CONDO' in unit_id.upper() or 'APT' in unit_id.upper() %}
+                        🏢
+                    {% else %}
+                        🏠
+                    {% endif %}
+                </div>
+                <div class="font-bold text-lg text-gray-900 mb-1">{{ unit_id }}</div>
+                <div class="text-sm text-gray-500">Click to manage</div>
+            </div>
                     {% endfor %}
-                </select>
+        </div>
             </div>
 
     <!-- Calendar Section -->
@@ -129,18 +204,14 @@
             </div>
 
             <!-- Legend -->
-            <div class="flex flex-wrap justify-center gap-4 text-sm mb-4">
+            <div class="flex flex-wrap justify-center gap-6 text-sm mb-4">
                 <div class="flex items-center">
                     <div class="w-4 h-4 bg-blue-500 rounded mr-2"></div>
                     <span>Selected</span>
                 </div>
                 <div class="flex items-center">
-                    <div class="w-4 h-4 bg-green-500 rounded mr-2"></div>
-                    <span>Booked</span>
-                </div>
-                <div class="flex items-center">
                     <div class="w-4 h-4 bg-red-500 rounded mr-2"></div>
-                    <span>Not Booked</span>
+                    <span>Booked</span>
                 </div>
                 <div class="flex items-center">
                     <div class="w-4 h-4 bg-gray-300 rounded mr-2"></div>
@@ -189,7 +260,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </button>
-                    </div>
+            </div>
 
                     <form id="bulk-entry-form" class="space-y-4">
                         <div>
@@ -198,40 +269,24 @@
                             </label>
                             <input type="number" id="bulk-price" name="bulk-price" step="0.01" min="0" required
                                    class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
+            </div>
 
-                        <div>
+            <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Booking Status <span class="text-red-500">*</span>
                             </label>
                             <div class="space-y-2">
                                 <label class="flex items-center">
-                                    <input type="radio" name="bulk-booking" value="booked" class="mr-2">
+                                    <input type="radio" name="bulk-booking" value="booked" class="mr-2" checked>
                                     <span>All dates are booked</span>
                                 </label>
                                 <label class="flex items-center">
-                                    <input type="radio" name="bulk-booking" value="not-booked" class="mr-2">
-                                    <span>All dates are not booked</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="radio" name="bulk-booking" value="mixed" class="mr-2" checked>
-                                    <span>I'll set individual booking status</span>
+                                    <input type="radio" name="bulk-booking" value="available" class="mr-2">
+                                    <span>All dates are available (not booked)</span>
                                 </label>
                             </div>
             </div>
 
-            <div>
-                            <label for="bulk-season" class="block text-sm font-medium text-gray-700 mb-2">
-                                Season Flag <span class="text-red-500">*</span>
-                            </label>
-                            <select id="bulk-season" name="bulk-season" required class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <option value="">Select Season</option>
-                    <option value="Summer">Summer</option>
-                    <option value="Fall">Fall</option>
-                    <option value="Winter">Winter</option>
-                    <option value="Spring">Spring</option>
-                </select>
-            </div>
 
                         <div class="flex justify-end space-x-3 pt-4">
                             <button type="button" id="cancel-bulk" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
@@ -264,7 +319,7 @@
         let selectionStart = null;
 
         // Elements
-        const unitSelect = document.getElementById('unitSelect');
+        const unitCards = document.querySelectorAll('.unit-card');
         const calendarSection = document.getElementById('calendar-section');
         const calendarGrid = document.getElementById('calendar-grid');
         const monthYearDisplay = document.getElementById('calendar-month-year');
@@ -284,27 +339,47 @@
             'July', 'August', 'September', 'October', 'November', 'December'
         ];
 
-        // Unit selection handler
-        unitSelect.addEventListener('change', function() {
-            currentUnit = this.value;
-            if (currentUnit) {
+        // Unit card selection handlers
+        unitCards.forEach(card => {
+            card.addEventListener('click', async function() {
+                // Remove selected class from all cards
+                unitCards.forEach(c => c.classList.remove('selected'));
+                
+                // Add selected class to clicked card
+                this.classList.add('selected');
+                
+                // Set current unit
+                currentUnit = this.dataset.unitId;
+                
+                // Show calendar and load data
                 calendarSection.classList.remove('hidden');
-                loadExistingBookings();
-                renderCalendar();
-            } else {
-                calendarSection.classList.add('hidden');
-                resetSelection();
-            }
+                await loadExistingBookings(); // Wait for bookings to load
+                renderCalendar(); // Then render calendar with the loaded data
+            });
+            
+            // Handle keyboard navigation
+            card.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.click();
+                }
+            });
         });
 
         // Calendar navigation
-        prevMonthBtn.addEventListener('click', () => {
+        prevMonthBtn.addEventListener('click', async () => {
             currentDate.setMonth(currentDate.getMonth() - 1);
+            if (currentUnit) {
+                await loadExistingBookings(); // Reload bookings for new month
+            }
             renderCalendar();
         });
 
-        nextMonthBtn.addEventListener('click', () => {
+        nextMonthBtn.addEventListener('click', async () => {
             currentDate.setMonth(currentDate.getMonth() + 1);
+            if (currentUnit) {
+                await loadExistingBookings(); // Reload bookings for new month
+            }
             renderCalendar();
         });
 
@@ -313,6 +388,8 @@
             if (!currentUnit) return;
 
             try {
+                console.log(`Loading bookings for unit: ${currentUnit}`); // Debug log
+                
                 // Get existing price logs for this unit
                 const response = await fetch(`/api/unit-bookings/${currentUnit}`);
                 if (response.ok) {
@@ -321,6 +398,9 @@
                     bookings.forEach(booking => {
                         existingBookings.set(booking.date, booking);
                     });
+                    console.log(`Loaded ${bookings.length} bookings for ${currentUnit}`); // Debug log
+            } else {
+                    console.warn(`Failed to load bookings: ${response.status}`);
                 }
             } catch (error) {
                 console.error('Error loading existing bookings:', error);
@@ -378,9 +458,8 @@
                     dayElement.classList.remove('bg-gray-100');
                     if (booking.was_booked) {
                         dayElement.classList.add('booked');
-                    } else {
-                        dayElement.classList.add('not-booked');
                     }
+                    // Available dates keep the default gray styling
                     
                     // Add price indicator
                     const priceIndicator = document.createElement('div');
@@ -491,9 +570,8 @@
                     const booking = existingBookings.get(dateStr);
                     if (booking.was_booked) {
                         element.classList.add('booked');
-                    } else {
-                        element.classList.add('not-booked');
                     }
+                    // Available dates keep the default gray styling
                 }
                 
                 // Today styling
@@ -579,14 +657,12 @@
             const bulkPriceRaw = formData.get('bulk-price');
             const bulkPrice = parseFloat(bulkPriceRaw);
             const bulkBooking = formData.get('bulk-booking');
-            const bulkSeason = formData.get('bulk-season');
             
             // Debug logging
             console.log('Form data:', {
                 bulkPriceRaw,
                 bulkPrice,
-                bulkBooking,
-                bulkSeason
+                bulkBooking
             });
             
             // Validate form data
@@ -600,18 +676,12 @@
                 return;
             }
             
-            if (!bulkSeason) {
-                showToast('Please select a season', 'error');
-                return;
-            }
-            
             const entries = Array.from(selectedDates).map(date => ({
                 unit_id: currentUnit,
                 date: date,
                 listed_price: bulkPrice,
-                was_booked: bulkBooking === 'booked' ? 'Y' : bulkBooking === 'not-booked' ? 'N' : 'Y', // Default to Y for mixed
-                season_flag: bulkSeason,
-                lead_time: null // Optional field
+                was_booked: bulkBooking === 'booked' ? 'Y' : 'N' // Y for booked, N for available
+                // lead_time will be calculated automatically by the backend
             }));
             
             try {
@@ -619,13 +689,13 @@
                 for (const entry of entries) {
                     console.log('Sending entry:', entry); // Debug log
                     
-                    const response = await fetch('/log_entry', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
+                const response = await fetch('/log_entry', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(entry)
-                    });
-                    
-                    if (!response.ok) {
+                });
+
+                if (!response.ok) {
                         const errorData = await response.json().catch(() => ({}));
                         throw new Error(errorData.error || `Failed to save entry for ${entry.date} (${response.status})`);
                     }
@@ -639,15 +709,14 @@
                 resetSelection();
                 await loadExistingBookings(); // Wait for reload
                 renderCalendar();
-                
+
             } catch (error) {
                 console.error('Error saving bulk entries:', error);
                 showToast(`Error: ${error.message}`, 'error');
             }
         });
 
-        // Initialize calendar
-        renderCalendar();
+        // Calendar will be initialized when a unit is selected
     });
 </script>
 {% endblock %}

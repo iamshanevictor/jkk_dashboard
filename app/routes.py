@@ -20,8 +20,7 @@ class QuickLogSchema(Schema):
     date = fields.Date(required=True)
     listed_price = fields.Float(required=True, validate=lambda x: x > 0)
     was_booked = fields.Str(required=True, validate=lambda x: x in ['Y', 'N'])
-    lead_time = fields.Int(allow_none=True, validate=lambda x: x is None or x >= 0)
-    season_flag = fields.Str(required=True, validate=lambda x: x in ['Summer', 'Fall', 'Winter', 'Spring'])
+    # lead_time will be calculated automatically, so we don't need it in the schema
 
 main = Blueprint('main', __name__)
 data_entry_bp = Blueprint('data_entry_bp', __name__)
@@ -54,8 +53,6 @@ def log_entry():
             our_listed_price = data.get('listed_price')
             was_booked_raw = data.get('was_booked')
             was_booked = was_booked_raw == 'Y' if was_booked_raw else False
-            lead_time = data.get('lead_time')
-            season_flag = data.get('season_flag')
             
             # Debug logging
             print(f"Received data: {data}")
@@ -63,7 +60,7 @@ def log_entry():
         except Exception as e:
             return jsonify({'error': f'Invalid JSON data: {str(e)}'}), 400
 
-        if not all([unit_id, date_str, our_listed_price, season_flag]):
+        if not all([unit_id, date_str, our_listed_price]):
             return jsonify({'error': 'Missing required fields'}), 400
         
         if data.get('was_booked') is None:
@@ -78,14 +75,7 @@ def log_entry():
         except ValueError:
             return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
 
-        # Lead time is optional, convert to int if present, otherwise None
-        if lead_time:
-            try:
-                lead_time = int(lead_time)
-            except ValueError:
-                return jsonify({'error': 'Lead Time must be an integer'}), 400
-        else:
-            lead_time = None
+        # Lead time will be calculated automatically by the model
 
         try:
             new_log = PriceLog(
@@ -93,9 +83,7 @@ def log_entry():
                 date=date_obj,
                 our_listed_price=our_listed_price,
                 was_booked=was_booked,
-                lead_time=lead_time,
-                day_of_week=date_obj.strftime('%A'),
-                season_flag=season_flag,
+                # lead_time and day_of_week will be calculated automatically by the model
                 # For simplicity, comp_avg_price and final_price_paid are omitted as they are not in the new form spec.
                 # They can be added back if needed in the future or handled as part of the original log-price route.
                 comp_avg_price=0.0, # Default value
@@ -137,8 +125,7 @@ def dashboard():
             'listed_price': log.our_listed_price,
             'was_booked': 'Yes' if log.was_booked else 'No',
             'lead_time': log.lead_time if log.lead_time is not None else '-',
-            'day_of_week': log.day_of_week,
-            'season_flag': log.season_flag
+            'day_of_week': log.day_of_week
         } for log in price_logs
     ]
 
@@ -174,7 +161,6 @@ def get_unit_bookings(unit_id):
             'date': log.date.isoformat(),
             'our_listed_price': log.our_listed_price,
             'was_booked': log.was_booked,
-            'season_flag': log.season_flag,
             'lead_time': log.lead_time
         })
     
