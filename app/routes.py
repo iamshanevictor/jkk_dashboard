@@ -120,6 +120,7 @@ def dashboard():
     # Prepare data for rendering
     dashboard_data = [
         {
+            'id': log.id,
             'date': log.date.isoformat(),
             'unit_id': log.property.unit_id,
             'listed_price': log.our_listed_price,
@@ -422,3 +423,23 @@ def handle_single_property(property_id):
         db.session.delete(prop)
         db.session.commit()
         return jsonify({'message': 'Property deleted successfully'}), 204
+
+@data_entry_bp.route('/api/delete-booking/<int:booking_id>', methods=['DELETE'])
+def delete_booking(booking_id):
+    """Delete a booking entry from the database"""
+    try:
+        # Find the booking entry
+        booking = PriceLog.query.get(booking_id)
+        if not booking:
+            return jsonify({'error': 'Booking entry not found'}), 404
+        
+        # Delete the booking
+        db.session.delete(booking)
+        db.session.commit()
+        
+        return jsonify({'message': 'Booking entry deleted successfully'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error deleting booking: {str(e)}")
+        return jsonify({'error': f'Failed to delete booking: {str(e)}'}), 500

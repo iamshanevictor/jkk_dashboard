@@ -50,6 +50,35 @@
         color: white;
     }
     
+    .calendar-day.past {
+        background-color: #F3F4F6 !important;
+        color: #9CA3AF !important;
+        cursor: not-allowed !important;
+        opacity: 0.6 !important;
+    }
+    
+    .calendar-day.past:hover {
+        transform: none !important;
+        cursor: not-allowed !important;
+        background-color: #F3F4F6 !important;
+    }
+    
+    /* Ensure past dates always look disabled even if they have other classes */
+    .calendar-day.past.selected {
+        background-color: #F3F4F6 !important;
+        color: #9CA3AF !important;
+    }
+    
+    .calendar-day.disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    
+    .calendar-day.disabled:hover {
+        transform: none;
+        cursor: not-allowed;
+    }
+    
     .calendar-day.range-start {
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
@@ -128,6 +157,10 @@
         color: #e0e7ff !important;
     }
     
+    .unit-card.selected .text-gray-600 {
+        color: white !important;
+    }
+    
     .unit-card:focus {
         outline: none;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
@@ -167,15 +200,27 @@
                  role="button" 
                  tabindex="0"
                  aria-label="Select {{ unit_id }}">
-                <div class="text-3xl mb-3">
+                <div class="mb-3">
                     {% if 'STUDIO' in unit_id.upper() or 'STD' in unit_id.upper() %}
-                        🏨
+                        <!-- Hotel/Studio Icon -->
+                        <svg class="w-8 h-8 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
                     {% elif 'VILLA' in unit_id.upper() or 'HOUSE' in unit_id.upper() %}
-                        🏡
+                        <!-- House/Villa Icon -->
+                        <svg class="w-8 h-8 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
                     {% elif 'CONDO' in unit_id.upper() or 'APT' in unit_id.upper() %}
-                        🏢
+                        <!-- Building/Condo Icon -->
+                        <svg class="w-8 h-8 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
                     {% else %}
-                        🏠
+                        <!-- Default Home Icon -->
+                        <svg class="w-8 h-8 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
                     {% endif %}
                 </div>
                 <div class="font-bold text-lg text-gray-900 mb-1">{{ unit_id }}</div>
@@ -216,6 +261,10 @@
                 <div class="flex items-center">
                     <div class="w-4 h-4 bg-gray-300 rounded mr-2"></div>
                     <span>Available</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-gray-200 rounded mr-2 opacity-60"></div>
+                    <span class="text-gray-500">Past Date</span>
                 </div>
                 </div>
             </div>
@@ -348,6 +397,10 @@
                 // Add selected class to clicked card
                 this.classList.add('selected');
                 
+                // Clear any previously selected dates when switching units
+                selectedDates.clear();
+                updateSelectionSummary();
+                
                 // Set current unit
                 currentUnit = this.dataset.unitId;
                 
@@ -433,23 +486,44 @@
             }
             
             // Add days of current month
+            const today = new Date().toISOString().split('T')[0];
+            
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayElement = document.createElement('div');
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const isToday = dateStr === new Date().toISOString().split('T')[0];
+                const isToday = dateStr === today;
+                const isPast = dateStr < today;
                 
                 dayElement.className = 'calendar-day bg-gray-100 hover:bg-gray-200';
                 dayElement.textContent = day;
                 dayElement.dataset.date = dateStr;
+                
+                let isDisabled = false;
+                
+                // Check if date is in the past
+                if (isPast) {
+                    dayElement.classList.remove('bg-gray-100', 'hover:bg-gray-200');
+                    dayElement.classList.add('past');
+                    isDisabled = true;
+                    
+                    // Clean up: Remove past dates from selectedDates if they exist
+                    if (selectedDates.has(dateStr)) {
+                        selectedDates.delete(dateStr);
+                    }
+                }
                 
                 // Apply styling based on state
                 if (isToday) {
                     dayElement.classList.add('today');
                 }
                 
-                if (selectedDates.has(dateStr)) {
+                // Only apply selected styling if date is not disabled
+                if (selectedDates.has(dateStr) && !isDisabled) {
                     dayElement.classList.remove('bg-gray-100');
                     dayElement.classList.add('selected');
+                } else if (selectedDates.has(dateStr) && isDisabled) {
+                    // Remove from selected dates if it becomes disabled (shouldn't happen but safety check)
+                    selectedDates.delete(dateStr);
                 }
                 
                 // Check if date has existing booking data
@@ -458,6 +532,12 @@
                     dayElement.classList.remove('bg-gray-100');
                     if (booking.was_booked) {
                         dayElement.classList.add('booked');
+                        isDisabled = true; // Booked dates cannot be selected
+                        
+                        // Clean up: Remove booked dates from selectedDates if they exist
+                        if (selectedDates.has(dateStr)) {
+                            selectedDates.delete(dateStr);
+                        }
                     }
                     // Available dates keep the default gray styling
                     
@@ -468,9 +548,15 @@
                     dayElement.appendChild(priceIndicator);
                 }
                 
-                // Add click handlers
-                dayElement.addEventListener('mousedown', handleDateMouseDown);
-                dayElement.addEventListener('mouseenter', handleDateMouseEnter);
+                // Mark as disabled if needed
+                if (isDisabled) {
+                    dayElement.classList.add('disabled');
+                    dayElement.dataset.disabled = 'true';
+                } else {
+                    // Add click handlers only for enabled dates
+                    dayElement.addEventListener('mousedown', handleDateMouseDown);
+                    dayElement.addEventListener('mouseenter', handleDateMouseEnter);
+                }
                 dayElement.addEventListener('mouseup', handleDateMouseUp);
                 
                 calendarGrid.appendChild(dayElement);
@@ -485,11 +571,24 @@
                 nextMonthDay.textContent = i;
                 calendarGrid.appendChild(nextMonthDay);
             }
+            
+            // Update selection summary after cleaning up disabled dates
+            updateSelectionSummary();
         }
 
         // Date selection handlers
         function handleDateMouseDown(event) {
             if (!event.target.dataset.date) return;
+            
+            // Check if date is disabled (past or booked)
+            if (event.target.dataset.disabled === 'true') {
+                if (event.target.classList.contains('past')) {
+                    showToast('Cannot select past dates', 'error');
+                } else if (event.target.classList.contains('booked')) {
+                    showToast('Cannot select already booked dates', 'error');
+                }
+                return;
+            }
             
             isSelecting = true;
             selectionStart = event.target.dataset.date;
@@ -524,9 +623,18 @@
             }
             
             let date = new Date(startDate);
+            const today = new Date().toISOString().split('T')[0];
+            
             while (date <= endDate) {
                 const dateStr = date.toISOString().split('T')[0];
-                selectedDates.add(dateStr);
+                
+                // Skip past dates and booked dates
+                const isPast = dateStr < today;
+                const isBooked = existingBookings.has(dateStr) && existingBookings.get(dateStr).was_booked;
+                
+                if (!isPast && !isBooked) {
+                    selectedDates.add(dateStr);
+                }
                 date.setDate(date.getDate() + 1);
             }
             
@@ -548,34 +656,57 @@
 
         function updateCalendarDisplay() {
             const dayElements = calendarGrid.querySelectorAll('.calendar-day[data-date]');
+            const today = new Date().toISOString().split('T')[0];
+            
             dayElements.forEach(element => {
                 const dateStr = element.dataset.date;
+                const isPast = dateStr < today;
                 
                 // Reset classes
                 element.className = 'calendar-day';
                 
-                // Apply base styling
-                if (!existingBookings.has(dateStr)) {
-                    element.classList.add('bg-gray-100', 'hover:bg-gray-200');
-                }
+                let isDisabled = false;
                 
-                // Apply selection styling
-                if (selectedDates.has(dateStr)) {
-                    element.classList.remove('bg-gray-100');
-                    element.classList.add('selected');
+                // Check if date is in the past - MUST BE FIRST
+                if (isPast) {
+                    element.classList.add('past', 'disabled');
+                    element.dataset.disabled = 'true';
+                    isDisabled = true;
+                    
+                    // Clean up: Remove past dates from selectedDates if they exist
+                    if (selectedDates.has(dateStr)) {
+                        selectedDates.delete(dateStr);
+                    }
+                } else {
+                    // Apply base styling for non-past dates
+                    if (!existingBookings.has(dateStr)) {
+                        element.classList.add('bg-gray-100', 'hover:bg-gray-200');
+                    }
                 }
                 
                 // Apply existing booking styling
                 if (existingBookings.has(dateStr)) {
                     const booking = existingBookings.get(dateStr);
                     if (booking.was_booked) {
-                        element.classList.add('booked');
+                        element.classList.add('booked', 'disabled');
+                        element.dataset.disabled = 'true';
+                        isDisabled = true;
+                        
+                        // Clean up: Remove booked dates from selectedDates if they exist
+                        if (selectedDates.has(dateStr)) {
+                            selectedDates.delete(dateStr);
+                        }
                     }
                     // Available dates keep the default gray styling
                 }
                 
+                // Apply selection styling ONLY if not disabled
+                if (selectedDates.has(dateStr) && !isDisabled) {
+                    element.classList.remove('bg-gray-100');
+                    element.classList.add('selected');
+                }
+                
                 // Today styling
-                const today = new Date().toISOString().split('T')[0];
                 if (dateStr === today) {
                     element.classList.add('today');
                 }
