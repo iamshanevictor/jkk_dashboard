@@ -281,12 +281,12 @@
                     <div class="text-center font-semibold text-gray-600 py-2">Thu</div>
                     <div class="text-center font-semibold text-gray-600 py-2">Fri</div>
                     <div class="text-center font-semibold text-gray-600 py-2">Sat</div>
-                </div>
-                
+            </div>
+
                 <!-- Calendar Days -->
                 <div id="calendar-grid" class="calendar-grid"></div>
+                </div>
             </div>
-        </div>
 
         <!-- Selection Summary -->
         <div id="selection-summary" class="hidden max-w-2xl mx-auto mb-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
@@ -746,7 +746,7 @@
                 
                 if (current.getTime() - previous.getTime() === 86400000) { // 1 day in milliseconds
                     end = dates[i];
-                } else {
+            } else {
                     ranges.push({ start, end });
                     start = dates[i];
                     end = dates[i];
@@ -783,7 +783,7 @@
         // Bulk entry form submission
         bulkEntryForm.addEventListener('submit', async function(event) {
             event.preventDefault();
-            
+
             const formData = new FormData(bulkEntryForm);
             const bulkPriceRaw = formData.get('bulk-price');
             const bulkPrice = parseFloat(bulkPriceRaw);
