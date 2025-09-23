@@ -30,6 +30,24 @@ def create_app(config_name=None):
     app.register_blueprint(management_bp)
 
     with app.app_context():
-        db.create_all()
+        try:
+            # Try to create tables first
+            db.create_all()
+            
+            # Test if the schema is correct by trying to query Property
+            from app.models import Property
+            Property.query.first()
+            print("Database schema is correct!")
+            
+        except Exception as e:
+            print(f"Database schema issue detected: {e}")
+            try:
+                print("Dropping and recreating all tables...")
+                db.drop_all()
+                db.create_all()
+                print("Database tables recreated successfully!")
+            except Exception as create_error:
+                print(f"Error recreating database tables: {create_error}")
+                raise
 
     return app

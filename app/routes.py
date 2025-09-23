@@ -443,3 +443,15 @@ def delete_booking(booking_id):
         db.session.rollback()
         print(f"Error deleting booking: {str(e)}")
         return jsonify({'error': f'Failed to delete booking: {str(e)}'}), 500
+
+@data_entry_bp.route('/api/reset-database', methods=['POST'])
+def reset_database():
+    """Reset the database schema (emergency use only)"""
+    try:
+        print("Manual database reset initiated...")
+        db.drop_all()
+        db.create_all()
+        return jsonify({'message': 'Database reset successfully!'}), 200
+    except Exception as e:
+        print(f"Error resetting database: {str(e)}")
+        return jsonify({'error': f'Failed to reset database: {str(e)}'}), 500
