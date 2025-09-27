@@ -104,6 +104,24 @@
         padding: 1px 3px;
         border-radius: 3px;
     }
+    
+    /* Responsive adjustments for the new layout */
+    @media (max-width: 1024px) {
+        .lg\:col-span-2 {
+            grid-column: span 1;
+        }
+        .lg\:col-span-1 {
+            grid-column: span 1;
+        }
+    }
+    
+    /* Ensure sticky positioning works well */
+    .sticky {
+        position: sticky;
+        top: 1rem;
+        max-height: calc(100vh - 2rem);
+        overflow-y: auto;
+    }
 
     /* Unit Card Styles */
     .unit-card {
@@ -113,6 +131,7 @@
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         overflow: hidden;
+        min-height: 80px;
     }
     
     .unit-card::before {
@@ -169,6 +188,16 @@
     @media (max-width: 640px) {
         .unit-card {
             padding: 1rem;
+            flex-direction: column;
+            text-align: center;
+        }
+        .unit-card .flex-shrink-0 {
+            margin-bottom: 0.5rem;
+        }
+        .unit-card .space-x-4 {
+            --tw-space-x-reverse: 0;
+            margin-right: calc(0px * var(--tw-space-x-reverse));
+            margin-left: calc(0px * calc(1 - var(--tw-space-x-reverse)));
         }
     }
     
@@ -193,38 +222,40 @@
         <h3 class="text-lg font-medium text-gray-900 mb-4 text-center">
             Select Property Unit <span class="text-red-500" aria-label="required">*</span>
         </h3>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
             {% for unit_id in unit_ids %}
-            <div class="unit-card cursor-pointer border-2 border-gray-200 rounded-lg p-6 text-center transition-all duration-200 hover:border-blue-300 hover:shadow-md" 
+            <div class="unit-card cursor-pointer border-2 border-gray-200 rounded-lg p-4 transition-all duration-200 hover:border-blue-300 hover:shadow-md flex items-center space-x-4" 
                  data-unit-id="{{ unit_id }}" 
                  role="button" 
                  tabindex="0"
                  aria-label="Select {{ unit_id }}">
-                <div class="mb-3">
+                <div class="flex-shrink-0">
                     {% if 'STUDIO' in unit_id.upper() or 'STD' in unit_id.upper() %}
                         <!-- Hotel/Studio Icon -->
-                        <svg class="w-8 h-8 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg class="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                         </svg>
                     {% elif 'VILLA' in unit_id.upper() or 'HOUSE' in unit_id.upper() %}
                         <!-- House/Villa Icon -->
-                        <svg class="w-8 h-8 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg class="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                         </svg>
                     {% elif 'CONDO' in unit_id.upper() or 'APT' in unit_id.upper() %}
                         <!-- Building/Condo Icon -->
-                        <svg class="w-8 h-8 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg class="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                         </svg>
                     {% else %}
                         <!-- Default Home Icon -->
-                        <svg class="w-8 h-8 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg class="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                         </svg>
                     {% endif %}
                 </div>
-                <div class="font-bold text-lg text-gray-900 mb-1">{{ unit_id }}</div>
-                <div class="text-sm text-gray-500">Click to manage</div>
+                <div class="flex-1 min-w-0">
+                    <div class="font-bold text-lg text-gray-900 mb-1">{{ unit_id }}</div>
+                    <div class="text-sm text-gray-500">Click to manage</div>
+                </div>
             </div>
                     {% endfor %}
         </div>
@@ -232,70 +263,93 @@
 
     <!-- Calendar Section -->
     <div id="calendar-section" class="hidden">
-        <!-- Calendar Header -->
-        <div class="max-w-4xl mx-auto mb-6">
-            <div class="flex justify-between items-center mb-4">
-                <button id="prev-month" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-200" aria-label="Previous month">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
-                </button>
-                <h3 id="calendar-month-year" class="text-xl font-semibold text-gray-800"></h3>
-                <button id="next-month" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-200" aria-label="Next month">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                </button>
-            </div>
+        <!-- Main Layout: Calendar on left, Summary on right -->
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Left Column: Calendar (2/3 width on large screens) -->
+                <div class="lg:col-span-2">
+                    <!-- Calendar Header -->
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <button id="prev-month" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-200" aria-label="Previous month">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                </svg>
+                            </button>
+                            <h3 id="calendar-month-year" class="text-xl font-semibold text-gray-800"></h3>
+                            <button id="next-month" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-200" aria-label="Next month">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </button>
+                        </div>
 
-            <!-- Legend -->
-            <div class="flex flex-wrap justify-center gap-6 text-sm mb-4">
-                <div class="flex items-center">
-                    <div class="w-4 h-4 bg-blue-500 rounded mr-2"></div>
-                    <span>Selected</span>
+                        <!-- Legend -->
+                        <div class="flex flex-wrap justify-center gap-6 text-sm mb-4">
+                            <div class="flex items-center">
+                                <div class="w-4 h-4 bg-blue-500 rounded mr-2"></div>
+                                <span>Selected</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-4 h-4 bg-red-500 rounded mr-2"></div>
+                                <span>Booked</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-4 h-4 bg-gray-300 rounded mr-2"></div>
+                                <span>Available</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-4 h-4 bg-gray-200 rounded mr-2 opacity-60"></div>
+                                <span class="text-gray-500">Past Date</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calendar Grid -->
+                    <div class="bg-white rounded-lg shadow-lg p-4">
+                        <!-- Day Headers -->
+                        <div class="calendar-grid mb-2">
+                            <div class="text-center font-semibold text-gray-600 py-2">Sun</div>
+                            <div class="text-center font-semibold text-gray-600 py-2">Mon</div>
+                            <div class="text-center font-semibold text-gray-600 py-2">Tue</div>
+                            <div class="text-center font-semibold text-gray-600 py-2">Wed</div>
+                            <div class="text-center font-semibold text-gray-600 py-2">Thu</div>
+                            <div class="text-center font-semibold text-gray-600 py-2">Fri</div>
+                            <div class="text-center font-semibold text-gray-600 py-2">Sat</div>
+                        </div>
+
+                        <!-- Calendar Days -->
+                        <div id="calendar-grid" class="calendar-grid"></div>
+                    </div>
                 </div>
-                <div class="flex items-center">
-                    <div class="w-4 h-4 bg-red-500 rounded mr-2"></div>
-                    <span>Booked</span>
-                </div>
-                <div class="flex items-center">
-                    <div class="w-4 h-4 bg-gray-300 rounded mr-2"></div>
-                    <span>Available</span>
-                </div>
-                <div class="flex items-center">
-                    <div class="w-4 h-4 bg-gray-200 rounded mr-2 opacity-60"></div>
-                    <span class="text-gray-500">Past Date</span>
-                </div>
+
+                <!-- Right Column: Selection Summary (1/3 width on large screens) -->
+                <div class="lg:col-span-1">
+                    <div class="sticky top-4">
+                        <!-- Selection Summary -->
+                        <div id="selection-summary" class="hidden p-6 bg-blue-50 rounded-lg border border-blue-200 shadow-sm">
+                            <h4 class="text-lg font-semibold text-blue-800 mb-4">Selected Dates Summary</h4>
+                            <div id="selected-dates-list" class="mb-4"></div>
+                            <p class="text-sm text-blue-600 mb-4">Click "Set Pricing & Booking Info" to configure details for all selected dates.</p>
+                            <button id="configure-dates-btn" class="w-full bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                                Set Pricing & Booking Info
+                            </button>
+                        </div>
+                        
+                        <!-- Empty state when no dates selected -->
+                        <div id="no-selection-state" class="p-6 bg-gray-50 rounded-lg border border-gray-200 shadow-sm text-center">
+                            <div class="mb-4">
+                                <svg class="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <h4 class="text-lg font-semibold text-gray-600 mb-2">No Dates Selected</h4>
+                            <p class="text-sm text-gray-500">Click on calendar dates to select them for pricing configuration.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-        <!-- Calendar Grid -->
-        <div class="max-w-4xl mx-auto mb-8">
-            <div class="bg-white rounded-lg shadow-lg p-4">
-                <!-- Day Headers -->
-                <div class="calendar-grid mb-2">
-                    <div class="text-center font-semibold text-gray-600 py-2">Sun</div>
-                    <div class="text-center font-semibold text-gray-600 py-2">Mon</div>
-                    <div class="text-center font-semibold text-gray-600 py-2">Tue</div>
-                    <div class="text-center font-semibold text-gray-600 py-2">Wed</div>
-                    <div class="text-center font-semibold text-gray-600 py-2">Thu</div>
-                    <div class="text-center font-semibold text-gray-600 py-2">Fri</div>
-                    <div class="text-center font-semibold text-gray-600 py-2">Sat</div>
-            </div>
-
-                <!-- Calendar Days -->
-                <div id="calendar-grid" class="calendar-grid"></div>
-                </div>
-            </div>
-
-        <!-- Selection Summary -->
-        <div id="selection-summary" class="hidden max-w-2xl mx-auto mb-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
-            <h4 class="text-lg font-semibold text-blue-800 mb-4">Selected Dates Summary</h4>
-            <div id="selected-dates-list" class="mb-4"></div>
-            <p class="text-sm text-blue-600 mb-4">Click "Set Pricing & Booking Info" to configure details for all selected dates.</p>
-            <button id="configure-dates-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">
-                Set Pricing & Booking Info
-            </button>
         </div>
 
         <!-- Bulk Entry Modal -->
@@ -714,12 +768,16 @@
         }
 
         function updateSelectionSummary() {
+            const noSelectionState = document.getElementById('no-selection-state');
+            
             if (selectedDates.size === 0) {
                 selectionSummary.classList.add('hidden');
+                noSelectionState.classList.remove('hidden');
                 return;
             }
             
             selectionSummary.classList.remove('hidden');
+            noSelectionState.classList.add('hidden');
             
             const sortedDates = Array.from(selectedDates).sort();
             const dateRanges = getDateRanges(sortedDates);

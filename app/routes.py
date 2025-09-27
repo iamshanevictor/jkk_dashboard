@@ -397,9 +397,41 @@ def handle_single_property(property_id):
         return jsonify({'message': 'Property updated successfully', 'property': prop.to_dict()})
 
     if request.method == 'DELETE':
+        # Check if property has active bookings (price logs)
+        active_bookings = PriceLog.query.filter_by(property_id=prop.id).count()
+        
+        if active_bookings > 0:
+            return jsonify({
+                'error': 'Property has active bookings',
+                'message': f'This property has {active_bookings} active booking(s). Deleting it will also remove all associated booking data.',
+                'booking_count': active_bookings,
+                'has_bookings': True
+            }), 400
+        
+        # Safe to delete - no active bookings
         db.session.delete(prop)
         db.session.commit()
         return jsonify({'message': 'Property deleted successfully'}), 204
+
+@management_bp.route('/api/properties/<int:property_id>/force-delete', methods=['DELETE'])
+def force_delete_property(property_id):
+    """Force delete a property and all its associated bookings"""
+    prop = Property.query.get(property_id)
+    if not prop:
+        return jsonify({'error': 'Property not found'}), 404
+
+    try:
+        # Delete all associated price logs first
+        PriceLog.query.filter_by(property_id=prop.id).delete()
+        
+        # Then delete the property
+        db.session.delete(prop)
+        db.session.commit()
+        
+        return jsonify({'message': 'Property and all associated bookings deleted successfully'}), 204
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to delete property: {str(e)}'}), 500
 
 @data_entry_bp.route('/api/delete-booking/<int:booking_id>', methods=['DELETE'])
 def delete_booking(booking_id):
