@@ -15,9 +15,6 @@ class Property(db.Model):
     max_guests = db.Column(db.Integer, nullable=False)
     amenities = db.Column(db.Text, nullable=True)
     quality_keywords = db.Column(db.Text, nullable=True)
-    cluster_id = db.Column(db.String(50), db.ForeignKey('cluster.name'), nullable=False) # Foreign Key to Cluster.name
-
-    cluster = db.relationship('Cluster', backref=db.backref('properties', lazy=True))
 
     def __repr__(self):
         return f'<Property {self.unit_id} - {self.property_name}>'
@@ -31,26 +28,9 @@ class Property(db.Model):
             'bathrooms': self.bathrooms,
             'max_guests': self.max_guests,
             'amenities': self.amenities,
-            'quality_keywords': self.quality_keywords,
-            'cluster_id': self.cluster_id
+            'quality_keywords': self.quality_keywords
         }
 
-class Cluster(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True, nullable=False) # e.g., 'LUXURY_2BR'
-    description = db.Column(db.Text, nullable=True)
-    competitor_urls = db.Column(JSONB, nullable=True) # Storing a list of URLs as JSONB
-
-    def __repr__(self):
-        return f'<Cluster {self.name}>'
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'description': self.description,
-            'competitor_urls': self.competitor_urls
-        }
 
 class PriceLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -87,7 +67,7 @@ class PriceLog(db.Model):
             'date': self.date.isoformat(),
             'property_id': self.property_id,
             'unit_id': self.property.unit_id, # Include unit_id for easier frontend consumption
-            'cluster_id': self.property.cluster_id, # Include cluster_id for easier frontend consumption
+            'property_name': self.property.property_name, # Include property_name for easier frontend consumption
             'our_listed_price': self.our_listed_price,
             'comp_avg_price': self.comp_avg_price,
             'was_booked': self.was_booked,
