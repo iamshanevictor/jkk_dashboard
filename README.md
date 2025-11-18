@@ -1,6 +1,6 @@
-# JKKDash - Airbnb Pricing Analytics Dashboard
+# Rentalytics - Vacation Rental Pricing Analytics Dashboard
 
-A Flask-based dashboard for managing Airbnb property pricing data, competitor analysis, and booking insights.
+A universal Flask-based dashboard for managing vacation rental property pricing data, competitor analysis, and booking insights. Perfect for Airbnb, Vrbo, Booking.com, and other short-term rental platforms.
 
 ## Features
 
@@ -16,7 +16,6 @@ A Flask-based dashboard for managing Airbnb property pricing data, competitor an
 - **Database**: PostgreSQL 13+
 - **Frontend**: HTML5, Tailwind CSS, Chart.js
 - **Deployment**: Render (Web Service + PostgreSQL)
-- **Testing**: pytest, pytest-flask
 
 ## Quick Start
 
@@ -62,7 +61,7 @@ A Flask-based dashboard for managing Airbnb property pricing data, competitor an
 Create a `.env` file with:
 
 ```bash
-DATABASE_URL=postgresql://username:password@localhost:5432/airbnb_dashboard
+DATABASE_URL=postgresql://username:password@localhost:5432/rentalytics_dashboard
 FLASK_ENV=development
 FLASK_DEBUG=True
 SECRET_KEY=your-secret-key-here
@@ -73,15 +72,8 @@ SECRET_KEY=your-secret-key-here
 Use pgAdmin4 to inspect the local database:
 - Host: `localhost`
 - Port: `5432`
-- Database: `airbnb_dashboard`
+- Database: `rentalytics_dashboard`
 - Username/Password: From your `DATABASE_URL`
-
-## Testing
-
-Run the test suite:
-```bash
-make test
-```
 
 ## Deployment
 
@@ -134,7 +126,6 @@ The render.yaml file configures:
 ```bash
 make install    # Set up virtual environment and install dependencies
 make dev        # Start development server
-make test       # Run test suite
 make migrate    # Apply database migrations
 make seed       # Seed database with sample data
 make clean      # Clean up generated files
@@ -144,9 +135,8 @@ make clean      # Clean up generated files
 
 1. Fork the repository
 2. Create a feature branch
-3. Make changes and add tests
-4. Run `make test` to ensure tests pass
-5. Submit a pull request
+3. Make changes and test manually
+4. Submit a pull request
 
 ## Security
 

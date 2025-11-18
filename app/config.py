@@ -27,7 +27,7 @@ class DevelopmentConfig(Config):
     
     @classmethod
     def get_database_uri(cls):
-        database_url = os.environ.get('DATABASE_URL') or 'postgresql://localhost:5432/airbnb_dashboard'
+        database_url = os.environ.get('DATABASE_URL') or 'postgresql://localhost:5432/rentalytics_dashboard'
         # Replace postgresql:// with postgresql+psycopg:// to use psycopg driver
         if database_url.startswith('postgresql://'):
             database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
