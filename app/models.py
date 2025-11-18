@@ -33,7 +33,7 @@ class Property(Document):
     max_guests = IntField(required=True)
     amenities = StringField()
     quality_keywords = StringField()
-    cluster = ReferenceField('Cluster', required=True, reverse_delete_rule=CASCADE)
+    cluster = ReferenceField('Cluster', required=False, null=True, reverse_delete_rule=CASCADE)
     
     meta = {
         'collection': 'properties',

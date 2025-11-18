@@ -27,6 +27,15 @@ data_entry_bp = Blueprint('data_entry_bp', __name__)
 insights_bp = Blueprint('insights_bp', __name__)
 management_bp = Blueprint('management_bp', __name__)
 
+
+def generate_unit_id():
+    counter = Property.objects.count() + 1
+    while True:
+        candidate = f"UNIT_{counter:04d}"
+        if not Property.objects(unit_id=candidate).first():
+            return candidate
+        counter += 1
+
 @main.route('/')
 def index():
     return render_template('index.html')
@@ -97,9 +106,14 @@ def log_entry():
             print(f"Database error: {str(e)}")
             return jsonify({'error': f'Database error: {str(e)}'}), 500
     
-    properties = Property.objects.all()
-    unit_ids = [p.unit_id for p in properties]
-    return render_template('data_entry.html', unit_ids=unit_ids)
+    properties = Property.objects.only('unit_id', 'property_name').all()
+    units = [
+        {
+            'unit_id': p.unit_id,
+            'property_name': p.property_name
+        } for p in properties
+    ]
+    return render_template('data_entry.html', units=units)
 
 
 @main.route('/dashboard')
@@ -118,7 +132,7 @@ def dashboard():
     # Prepare data for rendering
     dashboard_data = [
         {
-            'id': log.id,
+            'id': str(log.id),
             'date': log.date.isoformat(),
             'unit_id': log.property.unit_id,
             'listed_price': log.our_listed_price,
@@ -141,8 +155,8 @@ def dashboard():
 # Data Entry Blueprint Routes
 @data_entry_bp.route('/api/properties', methods=['GET'])
 def get_properties_for_dropdown():
-    properties = Property.objects.only('unit_id', 'cluster').all()
-    return jsonify([{'unit_id': p.unit_id, 'cluster_id': str(p.cluster.id) if p.cluster else None} for p in properties])
+    properties = Property.objects.only('unit_id').all()
+    return jsonify([{'unit_id': p.unit_id} for p in properties])
 
 @data_entry_bp.route('/api/unit-bookings/<string:unit_id>', methods=['GET'])
 def get_unit_bookings(unit_id):
@@ -202,23 +216,18 @@ def log_price():
     return jsonify({'message': 'Price log recorded successfully', 'log_id': new_log.id}), 201
 
 # Insights Blueprint Routes
-@insights_bp.route('/api/insights/<string:cluster_name>', methods=['GET'])
-def get_insights(cluster_name):
+@insights_bp.route('/api/insights/<string:unit_id>', methods=['GET'])
+def get_insights(unit_id):
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
 
-    cluster = Cluster.objects(name=cluster_name).first()
-    if not cluster:
-        return jsonify({'error': f'Cluster {cluster_name} not found'}), 404
+    # Find the property by unit_id
+    property_obj = Property.objects(unit_id=unit_id).first()
+    if not property_obj:
+        return jsonify({'error': f'Property with unit_id {unit_id} not found'}), 404
 
-    cluster_properties = Property.objects(cluster=cluster).all()
-    cluster_property_ids = [p.id for p in cluster_properties]
-
-    if not cluster_property_ids:
-        return jsonify({'message': f'No properties found for cluster {cluster_name}', 'insights': {}}), 200
-
-    # Initialize query to fetch all logs for the cluster's properties
-    logs_query = PriceLog.objects(property__in=cluster_property_ids)
+    # Initialize query to fetch all logs for this property
+    logs_query = PriceLog.objects(property=property_obj)
 
     # Apply date range filter only if provided
     if start_date_str and end_date_str:
@@ -239,7 +248,7 @@ def get_insights(cluster_name):
     recent_logs = logs_query.all()
 
     if not recent_logs:
-        return jsonify({'message': 'No price logs found for this cluster and date range.', 'insights': {}}), 200
+        return jsonify({'message': 'No price logs found for this property and date range.', 'insights': {}}), 200
 
     # Calculations
     total_our_price = sum(log.our_listed_price for log in recent_logs)
@@ -356,25 +365,19 @@ def get_all_properties():
 @management_bp.route('/api/properties', methods=['POST'])
 def add_property():
     data = request.get_json()
-    unit_id = data.get('unit_id')
     property_name = data.get('property_name')
     bedrooms = data.get('bedrooms')
     bathrooms = data.get('bathrooms')
     max_guests = data.get('max_guests')
     amenities = data.get('amenities', None)
     quality_keywords = data.get('quality_keywords', None)
-    cluster_id = data.get('cluster_id')
 
-    if not all([unit_id, property_name, bedrooms, bathrooms, max_guests, cluster_id]):
+    if not all([property_name, bedrooms, bathrooms, max_guests]):
         return jsonify({'error': 'Missing required property fields'}), 400
 
+    unit_id = generate_unit_id()
     if Property.objects(unit_id=unit_id).first():
         return jsonify({'error': f'Property with unit_id {unit_id} already exists'}), 409
-
-    # Check if cluster_id exists
-    cluster = Cluster.objects(name=cluster_id).first()
-    if not cluster:
-        return jsonify({'error': f'Cluster with name {cluster_id} does not exist'}), 400
 
     new_property = Property(
         unit_id=unit_id,
@@ -383,8 +386,7 @@ def add_property():
         bathrooms=bathrooms,
         max_guests=max_guests,
         amenities=amenities,
-        quality_keywords=quality_keywords,
-        cluster=cluster
+        quality_keywords=quality_keywords
     )
     new_property.save()
     return jsonify({'message': 'Property added successfully', 'property': new_property.to_dict()}), 201
@@ -397,20 +399,12 @@ def handle_single_property(property_id):
 
     if request.method == 'PUT':
         data = request.get_json()
-        prop.unit_id = data.get('unit_id', prop.unit_id)
         prop.property_name = data.get('property_name', prop.property_name)
         prop.bedrooms = data.get('bedrooms', prop.bedrooms)
         prop.bathrooms = data.get('bathrooms', prop.bathrooms)
         prop.max_guests = data.get('max_guests', prop.max_guests)
         prop.amenities = data.get('amenities', prop.amenities)
         prop.quality_keywords = data.get('quality_keywords', prop.quality_keywords)
-        new_cluster_id = data.get('cluster_id', prop.cluster.name if prop.cluster else None)
-
-        if new_cluster_id != (prop.cluster.name if prop.cluster else None):
-            cluster = Cluster.objects(name=new_cluster_id).first()
-            if not cluster:
-                return jsonify({'error': f'Cluster with name {new_cluster_id} does not exist'}), 400
-            prop.cluster = cluster
 
         prop.save()
         return jsonify({'message': 'Property updated successfully', 'property': prop.to_dict()})

@@ -163,7 +163,7 @@ The render.yaml file configures:
 - `DELETE /api/delete-booking/<booking_id>` - Delete a price/booking log by ID
 
 ### Insights  
-- `GET /api/insights/<cluster_name>` - Get cluster analytics (date filtering supported via `start_date`/`end_date` query params)
+- `GET /api/insights/<unit_id>` - Get per-unit analytics (date filtering supported via `start_date`/`end_date` query params)
 
 ### Management - Clusters
 - `GET /api/clusters` - List clusters

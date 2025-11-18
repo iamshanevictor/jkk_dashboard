@@ -194,24 +194,24 @@
             Select Property Unit <span class="text-red-500" aria-label="required">*</span>
         </h3>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            {% for unit_id in unit_ids %}
+            {% for unit in units %}
             <div class="unit-card cursor-pointer border-2 border-gray-200 rounded-lg p-6 text-center transition-all duration-200 hover:border-blue-300 hover:shadow-md" 
-                 data-unit-id="{{ unit_id }}" 
+                 data-unit-id="{{ unit.unit_id }}" 
                  role="button" 
                  tabindex="0"
-                 aria-label="Select {{ unit_id }}">
+                 aria-label="Select {{ unit.property_name }}">
                 <div class="mb-3">
-                    {% if 'STUDIO' in unit_id.upper() or 'STD' in unit_id.upper() %}
+                    {% if 'STUDIO' in unit.property_name.upper() or 'STD' in unit.property_name.upper() %}
                         <!-- Hotel/Studio Icon -->
                         <svg class="w-8 h-8 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                         </svg>
-                    {% elif 'VILLA' in unit_id.upper() or 'HOUSE' in unit_id.upper() %}
+                    {% elif 'VILLA' in unit.property_name.upper() or 'HOUSE' in unit.property_name.upper() %}
                         <!-- House/Villa Icon -->
                         <svg class="w-8 h-8 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                         </svg>
-                    {% elif 'CONDO' in unit_id.upper() or 'APT' in unit_id.upper() %}
+                    {% elif 'CONDO' in unit.property_name.upper() or 'APT' in unit.property_name.upper() %}
                         <!-- Building/Condo Icon -->
                         <svg class="w-8 h-8 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
@@ -223,12 +223,13 @@
                         </svg>
                     {% endif %}
                 </div>
-                <div class="font-bold text-lg text-gray-900 mb-1">{{ unit_id }}</div>
+                <div class="font-bold text-lg text-gray-900 mb-1">{{ unit.property_name }}</div>
+                <div class="text-xs text-gray-400">{{ unit.unit_id }}</div>
                 <div class="text-sm text-gray-500">Click to manage</div>
             </div>
-                    {% endfor %}
+            {% endfor %}
         </div>
-            </div>
+    </div>
 
     <!-- Calendar Section -->
     <div id="calendar-section" class="hidden">

@@ -51,7 +51,7 @@
                         <td class="px-6 py-4 whitespace-nowrap">{{ entry.lead_time }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">{{ entry.day_of_week }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <button onclick="deleteBooking({{ entry.id }}, '{{ entry.date }}', '{{ entry.unit_id }}')" 
+                            <button onclick="deleteBooking('{{ entry.id }}', '{{ entry.date }}', '{{ entry.unit_id }}')" 
                                     class="inline-flex items-center bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                                     title="Delete this booking entry">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -120,18 +120,15 @@
                 });
                 
                 if (response.ok) {
-                    showToast('Booking entry deleted successfully', 'success');
                     // Reload the page to refresh the data
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
+                    window.location.reload();
                 } else {
                     const errorData = await response.json();
-                    showToast(`Error: ${errorData.error}`, 'error');
+                    alert(`Error deleting booking: ${errorData.error}`);
                 }
             } catch (error) {
                 console.error('Error deleting booking:', error);
-                showToast('Failed to delete booking entry', 'error');
+                alert('Failed to delete booking entry');
             }
             
             // Close modal
