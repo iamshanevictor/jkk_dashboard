@@ -1,13 +1,16 @@
 import os
 from datetime import datetime
 from app import create_app
-from app.models import db, Property, Cluster # Import Cluster model
+from app.models import Property, Cluster # Import models without db
+from mongoengine import connect, disconnect
 
 def seed_data():
     app = create_app()
     with app.app_context():
-        db.drop_all()
-        db.create_all()
+        # Clear existing data
+        Cluster.drop_collection()
+        Property.drop_collection()
+        print("Existing data cleared.")
 
         # Sample Cluster Data
         cluster_luxury_2br = Cluster(
@@ -20,9 +23,9 @@ def seed_data():
             description='Cozy, 1-bedroom properties with beach access',
             competitor_urls=['http://comp3.com/beach', 'http://comp4.com/beach']
         )
-        db.session.add_all([cluster_luxury_2br, cluster_beach_1br])
-        db.session.commit()
-        print("Cluster table seeded with sample data.")
+        cluster_luxury_2br.save()
+        cluster_beach_1br.save()
+        print("Cluster collection seeded with sample data.")
 
         # Sample Property Data from "Property DNA" sheet
         prop_a = Property(
@@ -33,7 +36,7 @@ def seed_data():
             max_guests=6,
             amenities='Pool, Gym, Balcony, City View',
             quality_keywords='Modern, Spacious, High-end finishes',
-            cluster_id='LUXURY_2BR' # Linked to Cluster
+            cluster=cluster_luxury_2br # Linked to Cluster
         )
 
         prop_b = Property(
@@ -44,16 +47,16 @@ def seed_data():
             max_guests=3,
             amenities='Beach access, Ocean view, Free parking',
             quality_keywords='Charming, Relaxing, Coastal decor',
-            cluster_id='BEACH_1BR' # Linked to Cluster
+            cluster=cluster_beach_1br # Linked to Cluster
         )
 
-        db.session.add_all([prop_a, prop_b])
-        db.session.commit()
-        print("Property table seeded with sample data.")
+        prop_a.save()
+        prop_b.save()
+        print("Property collection seeded with sample data.")
 
 if __name__ == '__main__':
-    if 'DATABASE_URL' not in os.environ:
-        print("Error: DATABASE_URL environment variable not set.")
-        print("Please set it (e.g., export DATABASE_URL='postgresql://user:password@localhost/airbnb_dashboard')")
+    if 'MONGODB_URI' not in os.environ:
+        print("Error: MONGODB_URI environment variable not set.")
+        print("Please set it (e.g., export MONGODB_URI='mongodb://localhost:27017/rentalytics_dashboard')")
     else:
         seed_data()

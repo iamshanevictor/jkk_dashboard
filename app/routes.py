@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, render_template, request
 from marshmallow import Schema, fields, ValidationError
-from app.models import db, Property, PriceLog, Cluster
+from app.models import Property, PriceLog, Cluster
 from datetime import datetime, timedelta
-from sqlalchemy import func
+from mongoengine import Q
 import json
 
 # Validation schemas
@@ -66,7 +66,7 @@ def log_entry():
         if data.get('was_booked') is None:
             return jsonify({'error': 'Booking status is required'}), 400
 
-        property_obj = Property.query.filter_by(unit_id=unit_id).first()
+        property_obj = Property.objects(unit_id=unit_id).first()
         if not property_obj:
             return jsonify({'error': f'Property with unit_id {unit_id} not found'}), 404
 
@@ -79,7 +79,7 @@ def log_entry():
 
         try:
             new_log = PriceLog(
-                property_id=property_obj.id,
+                property=property_obj,
                 date=date_obj,
                 our_listed_price=our_listed_price,
                 was_booked=was_booked,
@@ -89,17 +89,15 @@ def log_entry():
                 comp_avg_price=0.0, # Default value
                 final_price_paid=our_listed_price if was_booked else None
             )
-            db.session.add(new_log)
-            db.session.commit()
+            new_log.save()
 
             return jsonify({'message': 'Price log entry created successfully'}), 201
             
         except Exception as e:
-            db.session.rollback()
             print(f"Database error: {str(e)}")
             return jsonify({'error': f'Database error: {str(e)}'}), 500
     
-    properties = Property.query.all()
+    properties = Property.objects.all()
     unit_ids = [p.unit_id for p in properties]
     return render_template('data_entry.html', unit_ids=unit_ids)
 
@@ -107,7 +105,7 @@ def log_entry():
 @main.route('/dashboard')
 def dashboard():
     # Fetch all PriceLog entries, ordered by date descending
-    price_logs = PriceLog.query.order_by(PriceLog.date.desc()).all()
+    price_logs = PriceLog.objects.order_by('-date').all()
 
     # Calculate summary statistics
     total_entries = len(price_logs)
@@ -143,18 +141,18 @@ def dashboard():
 # Data Entry Blueprint Routes
 @data_entry_bp.route('/api/properties', methods=['GET'])
 def get_properties_for_dropdown():
-    properties = Property.query.with_entities(Property.unit_id, Property.cluster_id).all()
-    return jsonify([{'unit_id': p.unit_id, 'cluster_id': p.cluster_id} for p in properties])
+    properties = Property.objects.only('unit_id', 'cluster').all()
+    return jsonify([{'unit_id': p.unit_id, 'cluster_id': str(p.cluster.id) if p.cluster else None} for p in properties])
 
 @data_entry_bp.route('/api/unit-bookings/<string:unit_id>', methods=['GET'])
 def get_unit_bookings(unit_id):
     """Get existing booking data for a specific unit"""
-    property_obj = Property.query.filter_by(unit_id=unit_id).first()
+    property_obj = Property.objects(unit_id=unit_id).first()
     if not property_obj:
         return jsonify({'error': f'Property with unit_id {unit_id} not found'}), 404
     
     # Get all price logs for this property
-    price_logs = PriceLog.query.filter_by(property_id=property_obj.id).all()
+    price_logs = PriceLog.objects(property=property_obj).all()
     
     bookings = []
     for log in price_logs:
@@ -181,7 +179,7 @@ def log_price():
     if not all([unit_id, date_str, our_price, comp_avg_price]):
         return jsonify({'error': 'Missing required fields'}), 400
 
-    property_obj = Property.query.filter_by(unit_id=unit_id).first()
+    property_obj = Property.objects(unit_id=unit_id).first()
     if not property_obj:
         return jsonify({'error': f'Property with unit_id {unit_id} not found'}), 404
 
@@ -191,7 +189,7 @@ def log_price():
         return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
 
     new_log = PriceLog(
-        property_id=property_obj.id,
+        property=property_obj,
         date=date_obj,
         our_listed_price=our_price,
         comp_avg_price=comp_avg_price,
@@ -199,8 +197,7 @@ def log_price():
         final_price_paid=final_price_paid,
         notes=notes
     )
-    db.session.add(new_log)
-    db.session.commit()
+    new_log.save()
 
     return jsonify({'message': 'Price log recorded successfully', 'log_id': new_log.id}), 201
 
@@ -210,31 +207,31 @@ def get_insights(cluster_name):
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
 
-    cluster = Cluster.query.filter_by(name=cluster_name).first()
+    cluster = Cluster.objects(name=cluster_name).first()
     if not cluster:
         return jsonify({'error': f'Cluster {cluster_name} not found'}), 404
 
-    cluster_properties = Property.query.filter_by(cluster_id=cluster.name).all()
+    cluster_properties = Property.objects(cluster=cluster).all()
     cluster_property_ids = [p.id for p in cluster_properties]
 
     if not cluster_property_ids:
         return jsonify({'message': f'No properties found for cluster {cluster_name}', 'insights': {}}), 200
 
     # Initialize query to fetch all logs for the cluster's properties
-    logs_query = PriceLog.query.filter(PriceLog.property_id.in_(cluster_property_ids))
+    logs_query = PriceLog.objects(property__in=cluster_property_ids)
 
     # Apply date range filter only if provided
     if start_date_str and end_date_str:
         try:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-            logs_query = logs_query.filter(PriceLog.date.between(start_date, end_date))
+            logs_query = logs_query.filter(date__gte=start_date, date__lte=end_date)
         except ValueError:
             return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
     else:
         # If no dates provided, get the min/max dates from available logs for display purposes
-        min_date_log = logs_query.order_by(PriceLog.date.asc()).first()
-        max_date_log = logs_query.order_by(PriceLog.date.desc()).first()
+        min_date_log = logs_query.order_by('date').first()
+        max_date_log = logs_query.order_by('-date').first()
         start_date = min_date_log.date if min_date_log else None
         end_date = max_date_log.date if max_date_log else None
 
@@ -319,23 +316,22 @@ def handle_clusters():
         if not name:
             return jsonify({'error': 'Cluster name is required'}), 400
 
-        if Cluster.query.filter_by(name=name).first():
+        if Cluster.objects(name=name).first():
             return jsonify({'error': f'Cluster with name {name} already exists'}), 409
         
         competitor_urls = json.loads(competitor_urls_str) if competitor_urls_str else None
 
         new_cluster = Cluster(name=name, description=description, competitor_urls=competitor_urls)
-        db.session.add(new_cluster)
-        db.session.commit()
+        new_cluster.save()
         return jsonify({'message': 'Cluster created successfully', 'cluster': new_cluster.to_dict()}), 201
 
     # GET request
-    clusters = Cluster.query.all()
+    clusters = Cluster.objects.all()
     return jsonify([c.to_dict() for c in clusters])
 
-@management_bp.route('/api/clusters/<int:cluster_id>', methods=['PUT', 'DELETE'])
+@management_bp.route('/api/clusters/<string:cluster_id>', methods=['PUT', 'DELETE'])
 def handle_single_cluster(cluster_id):
-    cluster = Cluster.query.get(cluster_id)
+    cluster = Cluster.objects(id=cluster_id).first()
     if not cluster:
         return jsonify({'error': 'Cluster not found'}), 404
 
@@ -345,17 +341,16 @@ def handle_single_cluster(cluster_id):
         cluster.description = data.get('description', cluster.description)
         competitor_urls_str = data.get('competitor_urls', None)
         cluster.competitor_urls = json.loads(competitor_urls_str) if competitor_urls_str else cluster.competitor_urls
-        db.session.commit()
+        cluster.save()
         return jsonify({'message': 'Cluster updated successfully', 'cluster': cluster.to_dict()})
 
     if request.method == 'DELETE':
-        db.session.delete(cluster)
-        db.session.commit()
+        cluster.delete()
         return jsonify({'message': 'Cluster deleted successfully'}), 204
 
 @management_bp.route('/api/properties/all', methods=['GET'])
 def get_all_properties():
-    properties = Property.query.all()
+    properties = Property.objects.all()
     return jsonify([p.to_dict() for p in properties])
 
 @management_bp.route('/api/properties', methods=['POST'])
@@ -373,11 +368,12 @@ def add_property():
     if not all([unit_id, property_name, bedrooms, bathrooms, max_guests, cluster_id]):
         return jsonify({'error': 'Missing required property fields'}), 400
 
-    if Property.query.filter_by(unit_id=unit_id).first():
+    if Property.objects(unit_id=unit_id).first():
         return jsonify({'error': f'Property with unit_id {unit_id} already exists'}), 409
 
     # Check if cluster_id exists
-    if not Cluster.query.filter_by(name=cluster_id).first():
+    cluster = Cluster.objects(name=cluster_id).first()
+    if not cluster:
         return jsonify({'error': f'Cluster with name {cluster_id} does not exist'}), 400
 
     new_property = Property(
@@ -388,15 +384,14 @@ def add_property():
         max_guests=max_guests,
         amenities=amenities,
         quality_keywords=quality_keywords,
-        cluster_id=cluster_id
+        cluster=cluster
     )
-    db.session.add(new_property)
-    db.session.commit()
+    new_property.save()
     return jsonify({'message': 'Property added successfully', 'property': new_property.to_dict()}), 201
 
-@management_bp.route('/api/properties/<int:property_id>', methods=['PUT', 'DELETE'])
+@management_bp.route('/api/properties/<string:property_id>', methods=['PUT', 'DELETE'])
 def handle_single_property(property_id):
-    prop = Property.query.get(property_id)
+    prop = Property.objects(id=property_id).first()
     if not prop:
         return jsonify({'error': 'Property not found'}), 404
 
@@ -409,39 +404,35 @@ def handle_single_property(property_id):
         prop.max_guests = data.get('max_guests', prop.max_guests)
         prop.amenities = data.get('amenities', prop.amenities)
         prop.quality_keywords = data.get('quality_keywords', prop.quality_keywords)
-        new_cluster_id = data.get('cluster_id', prop.cluster_id)
+        new_cluster_id = data.get('cluster_id', prop.cluster.name if prop.cluster else None)
 
-        if new_cluster_id != prop.cluster_id:
-            if not Cluster.query.filter_by(name=new_cluster_id).first():
+        if new_cluster_id != (prop.cluster.name if prop.cluster else None):
+            cluster = Cluster.objects(name=new_cluster_id).first()
+            if not cluster:
                 return jsonify({'error': f'Cluster with name {new_cluster_id} does not exist'}), 400
-            prop.cluster_id = new_cluster_id
+            prop.cluster = cluster
 
-        db.session.commit()
+        prop.save()
         return jsonify({'message': 'Property updated successfully', 'property': prop.to_dict()})
 
     if request.method == 'DELETE':
-        db.session.delete(prop)
-        db.session.commit()
+        prop.delete()
         return jsonify({'message': 'Property deleted successfully'}), 204
 
-@data_entry_bp.route('/api/delete-booking/<int:booking_id>', methods=['DELETE'])
+@data_entry_bp.route('/api/delete-booking/<string:booking_id>', methods=['DELETE'])
 def delete_booking(booking_id):
     """Delete a booking entry from the database"""
     try:
         # Find the booking entry
-        booking = PriceLog.query.get(booking_id)
+        booking = PriceLog.objects(id=booking_id).first()
         if not booking:
             return jsonify({'error': 'Booking entry not found'}), 404
-        
+
         # Delete the booking
-        db.session.delete(booking)
-        db.session.commit()
-        
-        return jsonify({'message': 'Booking entry deleted successfully'}), 200
-        
+        booking.delete()
+        return jsonify({'message': 'Booking deleted successfully'}), 200
+
     except Exception as e:
-        db.session.rollback()
-        print(f"Error deleting booking: {str(e)}")
         return jsonify({'error': f'Failed to delete booking: {str(e)}'}), 500
 
 @data_entry_bp.route('/api/reset-database', methods=['POST'])
@@ -449,8 +440,19 @@ def reset_database():
     """Reset the database schema (emergency use only)"""
     try:
         print("Manual database reset initiated...")
-        db.drop_all()
-        db.create_all()
+        # Drop all collections
+        from app.models import Cluster, Property, PriceLog
+        
+        # Drop all documents in each collection
+        Cluster.drop_collection()
+        Property.drop_collection()
+        PriceLog.drop_collection()
+        
+        # Recreate indexes
+        Cluster.ensure_indexes()
+        Property.ensure_indexes()
+        PriceLog.ensure_indexes()
+        
         return jsonify({'message': 'Database reset successfully!'}), 200
     except Exception as e:
         print(f"Error resetting database: {str(e)}")

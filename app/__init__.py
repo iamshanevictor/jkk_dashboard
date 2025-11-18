@@ -1,8 +1,7 @@
 import os
 from flask import Flask
-from flask_migrate import Migrate
 from app.config import config
-from app.models import db
+from mongoengine import connect, disconnect
 
 def create_app(config_name=None):
     if config_name is None:
@@ -11,9 +10,6 @@ def create_app(config_name=None):
     app = Flask(__name__, template_folder='../templates')
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
-
-    db.init_app(app)
-    migrate = Migrate(app, db)
     
     # Security headers
     @app.after_request
@@ -31,23 +27,18 @@ def create_app(config_name=None):
 
     with app.app_context():
         try:
-            # Try to create tables first
-            db.create_all()
+            # Test MongoDB connection
+            from app.models import Cluster, Property, PriceLog
             
-            # Test if the schema is correct by trying to query Property
-            from app.models import Property
-            Property.query.first()
-            print("Database schema is correct!")
+            # Try to ensure indexes exist
+            Cluster.ensure_indexes()
+            Property.ensure_indexes()
+            PriceLog.ensure_indexes()
+            
+            print("MongoDB connection and indexes are ready!")
             
         except Exception as e:
-            print(f"Database schema issue detected: {e}")
-            try:
-                print("Dropping and recreating all tables...")
-                db.drop_all()
-                db.create_all()
-                print("Database tables recreated successfully!")
-            except Exception as create_error:
-                print(f"Error recreating database tables: {create_error}")
-                raise
+            print(f"MongoDB connection issue detected: {e}")
+            raise
 
     return app

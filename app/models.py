@@ -1,30 +1,54 @@
-from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import func
-from sqlalchemy.dialects.postgresql import JSONB # For PostgreSQL JSON type
+from datetime import datetime, date
+from mongoengine import Document, StringField, IntField, FloatField, BooleanField, DateField, ListField, ReferenceField, CASCADE
 import json
 
-db = SQLAlchemy()
+class Cluster(Document):
+    name = StringField(required=True, unique=True, max_length=50)  # e.g., 'LUXURY_2BR'
+    description = StringField()
+    competitor_urls = ListField(StringField())  # Storing a list of URLs
+    
+    meta = {
+        'collection': 'clusters',
+        'indexes': [
+            'name'
+        ]
+    }
 
-class Property(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    unit_id = db.Column(db.String(50), unique=True, nullable=False)
-    property_name = db.Column(db.String(100), nullable=False)
-    bedrooms = db.Column(db.Integer, nullable=False)
-    bathrooms = db.Column(db.Float, nullable=False)
-    max_guests = db.Column(db.Integer, nullable=False)
-    amenities = db.Column(db.Text, nullable=True)
-    quality_keywords = db.Column(db.Text, nullable=True)
-    cluster_id = db.Column(db.String(50), db.ForeignKey('cluster.name'), nullable=False) # Foreign Key to Cluster.name
+    def __repr__(self):
+        return f'<Cluster {self.name}>'
 
-    cluster = db.relationship('Cluster', backref=db.backref('properties', lazy=True))
+    def to_dict(self):
+        return {
+            'id': str(self.id),
+            'name': self.name,
+            'description': self.description,
+            'competitor_urls': self.competitor_urls
+        }
+
+class Property(Document):
+    unit_id = StringField(required=True, unique=True, max_length=50)
+    property_name = StringField(required=True, max_length=100)
+    bedrooms = IntField(required=True)
+    bathrooms = FloatField(required=True)
+    max_guests = IntField(required=True)
+    amenities = StringField()
+    quality_keywords = StringField()
+    cluster = ReferenceField('Cluster', required=True, reverse_delete_rule=CASCADE)
+    
+    meta = {
+        'collection': 'properties',
+        'indexes': [
+            'unit_id',
+            'cluster'
+        ]
+    }
 
     def __repr__(self):
         return f'<Property {self.unit_id} - {self.property_name}>'
 
     def to_dict(self):
         return {
-            'id': self.id,
+            'id': str(self.id),
             'unit_id': self.unit_id,
             'property_name': self.property_name,
             'bedrooms': self.bedrooms,
@@ -32,39 +56,29 @@ class Property(db.Model):
             'max_guests': self.max_guests,
             'amenities': self.amenities,
             'quality_keywords': self.quality_keywords,
-            'cluster_id': self.cluster_id
+            'cluster_id': str(self.cluster.id) if self.cluster else None,
+            'cluster_name': self.cluster.name if self.cluster else None
         }
 
-class Cluster(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True, nullable=False) # e.g., 'LUXURY_2BR'
-    description = db.Column(db.Text, nullable=True)
-    competitor_urls = db.Column(JSONB, nullable=True) # Storing a list of URLs as JSONB
-
-    def __repr__(self):
-        return f'<Cluster {self.name}>'
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'description': self.description,
-            'competitor_urls': self.competitor_urls
-        }
-
-class PriceLog(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date, nullable=False)
-    property_id = db.Column(db.Integer, db.ForeignKey('property.id'), nullable=False)
-    our_listed_price = db.Column(db.Float, nullable=False)
-    comp_avg_price = db.Column(db.Float, nullable=False)
-    was_booked = db.Column(db.Boolean, default=False, nullable=False)
-    final_price_paid = db.Column(db.Float, nullable=True)
-    notes = db.Column(db.Text, nullable=True)
-    day_of_week = db.Column(db.String(10), nullable=False)
-    lead_time = db.Column(db.Integer, nullable=True)
-
-    property = db.relationship('Property', backref=db.backref('price_logs', lazy=True))
+class PriceLog(Document):
+    date = DateField(required=True)
+    property = ReferenceField('Property', required=True, reverse_delete_rule=CASCADE)
+    our_listed_price = FloatField(required=True)
+    comp_avg_price = FloatField(required=True)
+    was_booked = BooleanField(required=True, default=False)
+    final_price_paid = FloatField()
+    notes = StringField()
+    day_of_week = StringField(required=True, max_length=10)
+    lead_time = IntField()
+    
+    meta = {
+        'collection': 'price_logs',
+        'indexes': [
+            'date',
+            'property',
+            ('date', 'property')
+        ]
+    }
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -73,21 +87,21 @@ class PriceLog(db.Model):
         
         # Automatically calculate lead_time if not provided and date is available
         if self.date and not self.lead_time:
-            from datetime import date
             today = date.today()
             # Lead time is the number of days between today and the check-in date
             self.lead_time = (self.date - today).days if self.date >= today else 0
 
     def __repr__(self):
-        return f'<PriceLog {self.property.unit_id} - {self.date}>'
+        return f'<PriceLog {self.property.unit_id if self.property else "Unknown"} - {self.date}>'
 
     def to_dict(self):
         return {
-            'id': self.id,
+            'id': str(self.id),
             'date': self.date.isoformat(),
-            'property_id': self.property_id,
-            'unit_id': self.property.unit_id, # Include unit_id for easier frontend consumption
-            'cluster_id': self.property.cluster_id, # Include cluster_id for easier frontend consumption
+            'property_id': str(self.property.id) if self.property else None,
+            'unit_id': self.property.unit_id if self.property else None,
+            'cluster_id': str(self.property.cluster.id) if self.property and self.property.cluster else None,
+            'cluster_name': self.property.cluster.name if self.property and self.property.cluster else None,
             'our_listed_price': self.our_listed_price,
             'comp_avg_price': self.comp_avg_price,
             'was_booked': self.was_booked,
