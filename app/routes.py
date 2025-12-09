@@ -241,8 +241,8 @@ def get_insights(unit_id):
             return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
     else:
         # If no dates provided, get the min/max dates from available logs for display purposes
-        min_date_log = logs_query.order_by('date').first()
-        max_date_log = logs_query.order_by('-date').first()
+        min_date_log = logs_query.order_by(PriceLog.date.asc()).first()
+        max_date_log = logs_query.order_by(PriceLog.date.desc()).first()
         start_date = min_date_log.date if min_date_log else None
         end_date = max_date_log.date if max_date_log else None
 
