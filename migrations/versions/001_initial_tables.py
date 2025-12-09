@@ -17,18 +17,18 @@ depends_on = None
 
 
 def upgrade():
-    # Create cluster table
-    op.create_table('cluster',
+    op.create_table(
+        'clusters',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('name', sa.String(length=50), nullable=False),
         sa.Column('description', sa.Text(), nullable=True),
         sa.Column('competitor_urls', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('name')
+        sa.UniqueConstraint('name'),
     )
 
-    # Create property table
-    op.create_table('property',
+    op.create_table(
+        'properties',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('unit_id', sa.String(length=50), nullable=False),
         sa.Column('property_name', sa.String(length=100), nullable=False),
@@ -37,14 +37,14 @@ def upgrade():
         sa.Column('max_guests', sa.Integer(), nullable=False),
         sa.Column('amenities', sa.Text(), nullable=True),
         sa.Column('quality_keywords', sa.Text(), nullable=True),
-        sa.Column('cluster_id', sa.String(length=50), nullable=False),
-        sa.ForeignKeyConstraint(['cluster_id'], ['cluster.name'], ),
+        sa.Column('cluster_id', sa.Integer(), nullable=True),
+        sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id']),
         sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('unit_id')
+        sa.UniqueConstraint('unit_id'),
     )
 
-    # Create price_log table
-    op.create_table('price_log',
+    op.create_table(
+        'price_logs',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('date', sa.Date(), nullable=False),
         sa.Column('property_id', sa.Integer(), nullable=False),
@@ -55,12 +55,12 @@ def upgrade():
         sa.Column('notes', sa.Text(), nullable=True),
         sa.Column('day_of_week', sa.String(length=10), nullable=False),
         sa.Column('lead_time', sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(['property_id'], ['property.id'], ),
-        sa.PrimaryKeyConstraint('id')
+        sa.ForeignKeyConstraint(['property_id'], ['properties.id']),
+        sa.PrimaryKeyConstraint('id'),
     )
 
 
 def downgrade():
-    op.drop_table('price_log')
-    op.drop_table('property')
-    op.drop_table('cluster')
+    op.drop_table('price_logs')
+    op.drop_table('properties')
+    op.drop_table('clusters')

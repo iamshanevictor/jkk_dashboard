@@ -1,7 +1,7 @@
 """Add lead_time and season_flag to PriceLog
 
 Revision ID: 4f124afac230
-Revises: 
+Revises: 001_initial_tables
 Create Date: 2025-09-23 01:09:30.177635
 
 """

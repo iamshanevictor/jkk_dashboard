@@ -1,33 +1,26 @@
-import os
-from datetime import datetime
 from app import create_app
-from app.models import Property, Cluster # Import models without db
-from mongoengine import connect, disconnect
+from app.models import db, Property, Cluster
+
 
 def seed_data():
     app = create_app()
     with app.app_context():
-        # Clear existing data
-        Cluster.drop_collection()
-        Property.drop_collection()
-        print("Existing data cleared.")
+        db.drop_all()
+        db.create_all()
 
-        # Sample Cluster Data
         cluster_luxury_2br = Cluster(
             name='LUXURY_2BR',
             description='High-end, 2-bedroom properties in prime locations',
-            competitor_urls=['http://comp1.com/luxury', 'http://comp2.com/luxury']
+            competitor_urls=['http://comp1.com/luxury', 'http://comp2.com/luxury'],
         )
         cluster_beach_1br = Cluster(
             name='BEACH_1BR',
             description='Cozy, 1-bedroom properties with beach access',
-            competitor_urls=['http://comp3.com/beach', 'http://comp4.com/beach']
+            competitor_urls=['http://comp3.com/beach', 'http://comp4.com/beach'],
         )
-        cluster_luxury_2br.save()
-        cluster_beach_1br.save()
-        print("Cluster collection seeded with sample data.")
+        db.session.add_all([cluster_luxury_2br, cluster_beach_1br])
+        db.session.flush()
 
-        # Sample Property Data from "Property DNA" sheet
         prop_a = Property(
             unit_id='UNIT_A',
             property_name='Luxury Downtown Apartment',
@@ -36,7 +29,7 @@ def seed_data():
             max_guests=6,
             amenities='Pool, Gym, Balcony, City View',
             quality_keywords='Modern, Spacious, High-end finishes',
-            cluster=cluster_luxury_2br # Linked to Cluster
+            cluster=cluster_luxury_2br,
         )
 
         prop_b = Property(
@@ -47,16 +40,13 @@ def seed_data():
             max_guests=3,
             amenities='Beach access, Ocean view, Free parking',
             quality_keywords='Charming, Relaxing, Coastal decor',
-            cluster=cluster_beach_1br # Linked to Cluster
+            cluster=cluster_beach_1br,
         )
 
-        prop_a.save()
-        prop_b.save()
-        print("Property collection seeded with sample data.")
+        db.session.add_all([prop_a, prop_b])
+        db.session.commit()
+        print("Database seeded with sample clusters and properties.")
+
 
 if __name__ == '__main__':
-    if 'MONGODB_URI' not in os.environ:
-        print("Error: MONGODB_URI environment variable not set.")
-        print("Please set it (e.g., export MONGODB_URI='mongodb://localhost:27017/rentalytics_dashboard')")
-    else:
-        seed_data()
+    seed_data()

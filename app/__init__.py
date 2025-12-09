@@ -1,16 +1,19 @@
 import os
 from flask import Flask
 from app.config import config
-from mongoengine import connect, disconnect
+from app.models import db
+
 
 def create_app(config_name=None):
     if config_name is None:
         config_name = os.environ.get('FLASK_ENV', 'development')
-    
+
     app = Flask(__name__, template_folder='../templates')
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
-    
+
+    db.init_app(app)
+
     # Security headers
     @app.after_request
     def after_request(response):
@@ -26,19 +29,6 @@ def create_app(config_name=None):
     app.register_blueprint(management_bp)
 
     with app.app_context():
-        try:
-            # Test MongoDB connection
-            from app.models import Cluster, Property, PriceLog
-            
-            # Try to ensure indexes exist
-            Cluster.ensure_indexes()
-            Property.ensure_indexes()
-            PriceLog.ensure_indexes()
-            
-            print("MongoDB connection and indexes are ready!")
-            
-        except Exception as e:
-            print(f"MongoDB connection issue detected: {e}")
-            raise
+        db.create_all()
 
     return app
