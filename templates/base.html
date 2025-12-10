@@ -9,47 +9,339 @@
     <style>
         body {
             font-family: 'Questrial', sans-serif;
-            background-color: #0f0f0f;
+            transition: background-color 0.3s, color 0.3s;
         }
         h1, h2, h3, h4, h5, h6 {
             font-family: 'Questrial', sans-serif;
         }
-        .sidebar {
+        
+        /* Dark Theme (default) */
+        body.dark-theme {
+            background-color: #0f0f0f;
+            color: #e5e7eb;
+        }
+        body.dark-theme .sidebar {
             background-color: #1a1a1a;
+            border-right: 1px solid #2a2a2a;
+        }
+        body.dark-theme .main-content {
+            background-color: #0f0f0f;
+        }
+        body.dark-theme .nav-item {
+            color: #a0a0a0;
+        }
+        body.dark-theme .nav-item:hover {
+            background-color: #2a2a2a;
+            color: #ffffff;
+        }
+        body.dark-theme .content-card {
+            background-color: #1a1a1a;
+            border: 1px solid #2a2a2a;
+        }
+        body.dark-theme .stat-card {
+            background-color: #1a1a1a;
+            border: 1px solid #2a2a2a;
+        }
+        
+        /* Light Theme */
+        body.light-theme {
+            background-color: #f9fafb;
+            color: #111827;
+        }
+        body.light-theme .sidebar {
+            background-color: #ffffff;
+            border-right: 1px solid #e5e7eb;
+        }
+        body.light-theme .main-content {
+            background-color: #f9fafb;
+        }
+        body.light-theme .nav-item {
+            color: #4b5563;
+        }
+        body.light-theme .nav-item:hover {
+            background-color: #f3f4f6;
+            color: #111827;
+        }
+        body.light-theme .content-card {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+        body.light-theme .stat-card {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Common styles */
+        .sidebar {
             width: 240px;
             position: fixed;
             left: 0;
             top: 0;
             bottom: 0;
             overflow-y: auto;
-            border-right: 1px solid #2a2a2a;
         }
         .main-content {
             margin-left: 240px;
-            background-color: #0f0f0f;
             min-height: 100vh;
         }
         .nav-item {
-            color: #a0a0a0;
             transition: all 0.2s;
-        }
-        .nav-item:hover {
-            background-color: #2a2a2a;
-            color: #ffffff;
+            border-bottom: 2px solid transparent;
         }
         .nav-item.active {
-            background-color: #2563eb;
-            color: #ffffff;
+            background-color: transparent;
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+        .nav-item.active:hover {
+            background-color: transparent;
+            color: #2563eb;
         }
         .content-card {
-            background-color: #1a1a1a;
-            border: 1px solid #2a2a2a;
             border-radius: 8px;
         }
         .stat-card {
-            background-color: #1a1a1a;
-            border: 1px solid #2a2a2a;
+            border-radius: 8px;
         }
+        
+        /* Text color utilities */
+        body.dark-theme .text-themed {
+            color: #ffffff;
+        }
+        body.light-theme .text-themed {
+            color: #111827;
+        }
+        body.dark-theme .text-themed-muted {
+            color: #9ca3af;
+        }
+        body.light-theme .text-themed-muted {
+            color: #6b7280;
+        }
+        body.dark-theme .text-themed-secondary {
+            color: #d1d5db;
+        }
+        body.light-theme .text-themed-secondary {
+            color: #374151;
+        }
+        body.dark-theme .border-themed {
+            border-color: #2a2a2a;
+        }
+        body.light-theme .border-themed {
+            border-color: #e5e7eb;
+        }
+        body.dark-theme .bg-themed-input {
+            background-color: #1f2937;
+            color: #ffffff;
+            border-color: #374151;
+        }
+        body.light-theme .bg-themed-input {
+            background-color: #ffffff;
+            color: #111827;
+            border-color: #d1d5db;
+        }
+        body.dark-theme table {
+            color: #e5e7eb;
+        }
+        body.light-theme table {
+            color: #111827;
+        }
+        body.dark-theme th {
+            color: #9ca3af;
+        }
+        body.light-theme th {
+            color: #374151;
+            background-color: #f9fafb !important;
+        }
+        body.dark-theme td {
+            color: #d1d5db;
+        }
+        body.light-theme td {
+            color: #111827;
+        }
+        body.dark-theme .sidebar h1 {
+            color: #ffffff;
+        }
+        body.light-theme .sidebar h1 {
+            color: #111827;
+        }
+        body.dark-theme .sidebar {
+            border-bottom-color: #2a2a2a;
+        }
+        body.light-theme .sidebar {
+            border-bottom-color: #e5e7eb;
+        }
+        
+        /* Page headings */
+        body.light-theme h1,
+        body.light-theme h2,
+        body.light-theme h3,
+        body.light-theme h4,
+        body.light-theme h5,
+        body.light-theme h6 {
+            color: #111827;
+        }
+        
+        /* Calendar specific for light theme */
+        body.light-theme .calendar-day {
+            background-color: #ffffff;
+            color: #111827;
+            border: 1px solid #d1d5db;
+        }
+        body.light-theme .calendar-day:hover {
+            background-color: #e0ecff;
+            border-color: #93c5fd;
+            color: #0f172a;
+        }
+        body.light-theme .calendar-day.other-month {
+            color: #9ca3af;
+            background-color: #f9fafb;
+        }
+        body.light-theme .calendar-day.past {
+            background-color: #f3f4f6 !important;
+            color: #9ca3af !important;
+            border-color: #e5e7eb !important;
+        }
+        body.light-theme .calendar-day.today {
+            border: 2px solid #3B82F6;
+            background-color: #eff6ff;
+        }
+        body.light-theme .calendar-day.booked {
+            background-color: #ef4444;
+            color: #ffffff;
+            border-color: #ef4444;
+        }
+        body.light-theme .calendar-day.selected {
+            background-color: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+        }
+        body.light-theme .calendar-day.range-middle {
+            background-color: #dbeafe;
+            border-color: #93c5fd;
+        }
+        
+        /* Unit cards for light theme */
+        body.light-theme .unit-card {
+            background: #ffffff;
+            border: 2px solid #e5e7eb;
+        }
+        body.light-theme .unit-card:hover {
+            background: #f9fafb;
+            border-color: #3b82f6;
+        }
+        body.light-theme .unit-card .text-white {
+            color: #111827 !important;
+        }
+        body.light-theme .unit-card .text-gray-500 {
+            color: #6b7280 !important;
+        }
+        body.light-theme .unit-card .text-gray-400 {
+            color: #9ca3af !important;
+        }
+        body.light-theme .unit-card svg {
+            color: #6b7280 !important;
+        }
+        
+        /* Modal for light theme */
+        body.light-theme #bulk-entry-modal > div {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+        }
+        body.light-theme #bulk-entry-modal h3 {
+            color: #111827;
+        }
+        body.light-theme #bulk-entry-modal label {
+            color: #374151;
+        }
+        body.light-theme #bulk-entry-modal input,
+        body.light-theme #bulk-entry-modal select {
+            background-color: #ffffff;
+            color: #111827;
+            border-color: #d1d5db;
+        }
+        
+        /* Selection summary for light theme */
+        body.light-theme #selection-summary {
+            background-color: #eff6ff;
+            border-color: #93c5fd;
+        }
+        body.light-theme #selection-summary h4 {
+            color: #1e40af;
+        }
+        body.light-theme #selection-summary p {
+            color: #1e40af;
+        }
+        
+        /* Navigation button styling for light theme */
+        body.light-theme #prev-month,
+        body.light-theme #next-month {
+            background-color: #f3f4f6;
+            color: #111827;
+        }
+        body.light-theme #prev-month:hover,
+        body.light-theme #next-month:hover {
+            background-color: #e5e7eb;
+        }
+        
+        /* Stats cards text for light theme */
+        body.light-theme .stat-card h3 {
+            color: #6b7280;
+        }
+        body.light-theme .stat-card p {
+            color: #111827;
+        }
+
+        /* Form controls for light theme */
+        body.light-theme input,
+        body.light-theme select,
+        body.light-theme textarea {
+            background-color: #ffffff;
+            color: #111827;
+            border: 1px solid #d1d5db;
+        }
+        body.light-theme input::placeholder,
+        body.light-theme textarea::placeholder {
+            color: #9ca3af;
+        }
+        body.light-theme input:focus,
+        body.light-theme select:focus,
+        body.light-theme textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+        }
+
+        /* Legend booked swatch for light theme */
+        body.light-theme .legend-booked {
+            background-color: #ef4444 !important;
+        }
+        
+        /* Theme toggle button */
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #2563eb;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+            z-index: 100;
+        }
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+        }
+        
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -66,14 +358,14 @@
     </style>
     {% block head_extra %}{% endblock %}
 </head>
-<body>
+<body class="dark-theme">
     <!-- Left Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="p-6 border-b border-gray-800">
-            <h1 class="text-xl font-bold text-white">Rentalytics</h1>
+            <h1 class="text-xl font-bold">Rentalytics</h1>
         </div>
         <nav class="p-4 space-y-1" role="navigation" aria-label="Main navigation">
-            <a href="/" class="nav-item nav-link flex items-center px-4 py-3 rounded-md text-sm" aria-current="page">
+            <a href="/" class="nav-item nav-link flex items-center px-4 py-3 rounded-md text-sm">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                 </svg>
@@ -124,9 +416,50 @@
         </main>
     </div>
 
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+        <svg id="theme-icon-moon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+        <svg id="theme-icon-sun" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+    </button>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     
     <script>
+        // Theme management
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeMoonIcon = document.getElementById('theme-icon-moon');
+        const themeSunIcon = document.getElementById('theme-icon-sun');
+        const body = document.body;
+
+        // Load saved theme or default to dark
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        setTheme(savedTheme);
+
+        function setTheme(theme) {
+            if (theme === 'light') {
+                body.classList.remove('dark-theme');
+                body.classList.add('light-theme');
+                themeMoonIcon.classList.add('hidden');
+                themeSunIcon.classList.remove('hidden');
+            } else {
+                body.classList.remove('light-theme');
+                body.classList.add('dark-theme');
+                themeMoonIcon.classList.remove('hidden');
+                themeSunIcon.classList.add('hidden');
+            }
+            localStorage.setItem('theme', theme);
+        }
+
+        themeToggle.addEventListener('click', function() {
+            const currentTheme = body.classList.contains('dark-theme') ? 'dark' : 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            setTheme(newTheme);
+        });
+
         // Mobile menu toggle
         document.addEventListener('DOMContentLoaded', function() {
             const mobileMenuButton = document.getElementById('mobile-menu-button');
