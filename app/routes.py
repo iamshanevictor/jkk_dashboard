@@ -1,4 +1,6 @@
-from flask import Blueprint, jsonify, render_template, request
+import os
+
+from flask import Blueprint, jsonify, render_template, request, send_from_directory, current_app
 from marshmallow import Schema, fields, ValidationError
 from app.models import db, Property, PriceLog, Cluster
 from datetime import datetime
@@ -157,8 +159,14 @@ def dashboard():
 # Data Entry Blueprint Routes
 @data_entry_bp.route('/api/properties', methods=['GET'])
 def get_properties_for_dropdown():
-    properties = Property.query.with_entities(Property.unit_id).all()
-    return jsonify([{'unit_id': unit_id} for (unit_id,) in properties])
+    properties = Property.query.with_entities(Property.unit_id, Property.property_name).all()
+    return jsonify([
+        {
+            'unit_id': unit_id,
+            'property_name': property_name,
+        }
+        for (unit_id, property_name) in properties
+    ])
 
 @data_entry_bp.route('/api/unit-bookings/<string:unit_id>', methods=['GET'])
 def get_unit_bookings(unit_id):
@@ -457,3 +465,21 @@ def reset_database():
         db.session.rollback()
         print(f"Error resetting database: {str(e)}")
         return jsonify({'error': f'Failed to reset database: {str(e)}'}), 500
+
+
+@main.route('/app')
+@main.route('/app/<path:path>')
+def serve_vue_app(path=None):
+    """Serve the built Vue SPA from app/static/dist."""
+    dist_path = os.path.join(current_app.root_path, 'static', 'dist')
+    index_path = os.path.join(dist_path, 'index.html')
+
+    if not os.path.exists(index_path):
+        return jsonify({'error': 'Frontend build not found. Run npm run build in /frontend.'}), 404
+
+    if path:
+        candidate = os.path.join(dist_path, path)
+        if os.path.isfile(candidate):
+            return send_from_directory(dist_path, path)
+        # Fallback for client-side routes
+    return send_from_directory(dist_path, 'index.html')

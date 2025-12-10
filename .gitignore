@@ -5,3 +5,7 @@ __pycache__/
 .env
 .DS_Store
 *.log
+node_modules/
+app/static/dist/
+frontend/node_modules/
+frontend/dist/
