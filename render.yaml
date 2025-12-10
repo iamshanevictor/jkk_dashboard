@@ -1,9 +1,11 @@
 services:
   - type: web
     name: jkkdash-web
-    env: python
     runtime: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: |
+      npm ci --prefix frontend
+      npm run build --prefix frontend
+      pip install -r requirements.txt
     startCommand: gunicorn wsgi:app
     envVars:
       - key: FLASK_ENV
@@ -14,4 +16,6 @@ services:
         generateValue: true
       - key: PYTHON_VERSION
         value: "3.11"
+      - key: NODE_VERSION
+        value: "20"
     healthCheckPath: /

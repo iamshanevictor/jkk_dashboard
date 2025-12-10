@@ -1,4 +1,6 @@
-from flask import Blueprint, jsonify, render_template, request
+import os
+
+from flask import Blueprint, jsonify, render_template, request, send_from_directory, current_app
 from marshmallow import Schema, fields, ValidationError
 from app.models import db, Property, PriceLog, Cluster
 from datetime import datetime
@@ -46,6 +48,40 @@ def insights():
 @main.route('/manage')
 def manage():
     return render_template('manage.html')
+
+
+@main.route('/api/dashboard', methods=['GET'])
+def api_dashboard():
+    """Return summary stats and recent price logs for dashboard."""
+    price_logs = PriceLog.query.order_by(PriceLog.date.desc()).limit(100).all()
+
+    total_entries = len(price_logs)
+    booked_entries = sum(1 for log in price_logs if log.was_booked)
+    not_booked_entries = total_entries - booked_entries
+    total_listed_price = sum(log.our_listed_price for log in price_logs)
+    avg_listed_price = round((total_listed_price / total_entries), 2) if total_entries else 0
+
+    dashboard_data = [
+        {
+            'id': log.id,
+            'date': log.date.isoformat(),
+            'unit_id': log.property.unit_id if log.property else None,
+            'listed_price': log.our_listed_price,
+            'was_booked': 'Yes' if log.was_booked else 'No',
+            'lead_time': log.lead_time if log.lead_time is not None else '-',
+            'day_of_week': log.day_of_week,
+        }
+        for log in price_logs
+    ]
+
+    summary_stats = {
+        'total_entries': total_entries,
+        'booked_entries': booked_entries,
+        'not_booked_entries': not_booked_entries,
+        'avg_listed_price': avg_listed_price,
+    }
+
+    return jsonify({'summary_stats': summary_stats, 'dashboard_data': dashboard_data}), 200
 
 @main.route('/ping')
 def ping():
@@ -157,8 +193,14 @@ def dashboard():
 # Data Entry Blueprint Routes
 @data_entry_bp.route('/api/properties', methods=['GET'])
 def get_properties_for_dropdown():
-    properties = Property.query.with_entities(Property.unit_id).all()
-    return jsonify([{'unit_id': unit_id} for (unit_id,) in properties])
+    properties = Property.query.with_entities(Property.unit_id, Property.property_name).all()
+    return jsonify([
+        {
+            'unit_id': unit_id,
+            'property_name': property_name,
+        }
+        for (unit_id, property_name) in properties
+    ])
 
 @data_entry_bp.route('/api/unit-bookings/<string:unit_id>', methods=['GET'])
 def get_unit_bookings(unit_id):
@@ -457,3 +499,21 @@ def reset_database():
         db.session.rollback()
         print(f"Error resetting database: {str(e)}")
         return jsonify({'error': f'Failed to reset database: {str(e)}'}), 500
+
+
+@main.route('/app')
+@main.route('/app/<path:path>')
+def serve_vue_app(path=None):
+    """Serve the built Vue SPA from app/static/dist."""
+    dist_path = os.path.join(current_app.root_path, 'static', 'dist')
+    index_path = os.path.join(dist_path, 'index.html')
+
+    if not os.path.exists(index_path):
+        return jsonify({'error': 'Frontend build not found. Run npm run build in /frontend.'}), 404
+
+    if path:
+        candidate = os.path.join(dist_path, path)
+        if os.path.isfile(candidate):
+            return send_from_directory(dist_path, path)
+        # Fallback for client-side routes
+    return send_from_directory(dist_path, 'index.html')

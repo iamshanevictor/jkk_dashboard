@@ -16,7 +16,10 @@ def create_app(config_name=None):
     db.init_app(app)
     
     # Enable CORS for frontend
-    CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "http://localhost:5174"]}})
+    CORS(app, resources={
+        r"/api/*": {"origins": ["http://localhost:5173", "http://localhost:5174"]},
+        r"/log_entry": {"origins": ["http://localhost:5173", "http://localhost:5174"]}
+    })
 
     # Security headers
     @app.after_request
