@@ -119,63 +119,50 @@
     .unit-card {
         background: #1a1a1a;
         border: 2px solid #2a2a2a;
-        border-radius: 10px;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
-        overflow: hidden;
-        padding: 1.25rem;
-        min-height: 110px;
-    }
-    
-    .unit-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #3b82f6, #1d4ed8);
-        opacity: 0;
-        transition: opacity 0.3s ease;
+        overflow: visible;
     }
     
     .unit-card:hover {
         border-color: #3b82f6;
-        transform: translateY(-4px);
-        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
-        background: #2a2a2a;
-    }
-    
-    .unit-card:hover::before {
-        opacity: 1;
     }
     
     .unit-card.selected {
-        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-        border-color: #1d4ed8;
-        color: white;
-        transform: translateY(-4px);
-        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+        border-color: #2563eb;
+        background-color: #2a2a2a;
+        ring: 2px;
+        box-shadow: 0 0 0 2px #2563eb;
     }
     
-    .unit-card.selected::before {
-        opacity: 0;
+    .unit-card .checkmark {
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
-    .unit-card.selected .text-gray-900 {
-        color: white !important;
+    body.light-theme .unit-card {
+        background: #ffffff;
+        border-color: #e5e7eb;
     }
     
-    .unit-card.selected .text-gray-500 {
-        color: #e0e7ff !important;
+    body.light-theme .unit-card:hover {
+        border-color: #3b82f6;
+        background: #f9fafb;
     }
     
-    .unit-card.selected .text-gray-600 {
-        color: white !important;
+    body.light-theme .unit-card.selected {
+        border-color: #2563eb;
+        background-color: #f3f4f6;
+        box-shadow: 0 0 0 2px #2563eb;
     }
-
-    .unit-card.selected .text-gray-400 {
-        color: #e0e7ff !important;
+    
+    body.light-theme .unit-card .text-white {
+        color: #111827 !important;
+    }
+    
+    body.light-theme .unit-card .text-gray-400 {
+        color: #6b7280 !important;
     }
     
     .unit-card:focus {
@@ -214,37 +201,22 @@
                 <h3 class="text-lg font-medium text-themed">Select Property Unit <span class="text-red-400" aria-label="required">*</span></h3>
                 <div class="text-sm text-themed-muted">Pick a unit to load its calendar and bookings</div>
             </div>
-            <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            <div id="unitCardsContainer" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
             {% for unit in units %}
-            <div class="unit-card cursor-pointer rounded-lg text-center transition-all duration-200 p-3 min-h-20" 
+            <div class="unit-card p-3 rounded-lg border-2 border-gray-700 cursor-pointer transition-all duration-200 hover:border-blue-500 min-h-20 flex flex-col justify-between relative" 
                  data-unit-id="{{ unit.unit_id }}" 
                  role="button" 
                  tabindex="0"
-                 aria-label="Select {{ unit.property_name }}">
-                <div class="mb-1">
-                    {% if 'STUDIO' in unit.property_name.upper() or 'STD' in unit.property_name.upper() %}
-                        <!-- Hotel/Studio Icon -->
-                        <svg class="w-5 h-5 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                        </svg>
-                    {% elif 'VILLA' in unit.property_name.upper() or 'HOUSE' in unit.property_name.upper() %}
-                        <!-- House/Villa Icon -->
-                        <svg class="w-5 h-5 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                        </svg>
-                    {% elif 'CONDO' in unit.property_name.upper() or 'APT' in unit.property_name.upper() %}
-                        <!-- Building/Condo Icon -->
-                        <svg class="w-5 h-5 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                        </svg>
-                    {% else %}
-                        <!-- Default Home Icon -->
-                        <svg class="w-5 h-5 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                        </svg>
-                    {% endif %}
+                 aria-label="Select {{ unit.unit_id }}">
+                <div>
+                    <div class="text-sm font-semibold text-white">{{ unit.unit_id }}</div>
+                    <div class="text-xs text-gray-400">{{ unit.property_name }}</div>
                 </div>
-                <div class="font-semibold text-xs text-themed line-clamp-2">{{ unit.property_name }}</div>
+                <div class="checkmark absolute top-2 right-2 hidden">
+                    <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
             </div>
             {% endfor %}
         </div>
@@ -350,7 +322,102 @@
                 </form>
             </div>
         </div>
+    </div>
 
+    <!-- Summary Statistics -->
+    <div class="mb-8 mt-8">
+        <h3 class="text-lg font-medium text-themed mb-4">Summary Statistics</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="stat-card p-6 rounded-lg border-l-4 border-blue-500">
+                <h3 class="text-sm font-medium text-themed-muted">Total Entries</h3>
+                <p class="text-3xl font-bold text-themed mt-2">{{ summary_stats.total_entries }}</p>
+            </div>
+            <div class="stat-card p-6 rounded-lg border-l-4 border-green-500">
+                <h3 class="text-sm font-medium text-themed-muted">Booked Entries</h3>
+                <p class="text-3xl font-bold text-themed mt-2">{{ summary_stats.booked_entries }}</p>
+            </div>
+            <div class="stat-card p-6 rounded-lg border-l-4 border-red-500">
+                <h3 class="text-sm font-medium text-themed-muted">Not Booked Entries</h3>
+                <p class="text-3xl font-bold text-themed mt-2">{{ summary_stats.not_booked_entries }}</p>
+            </div>
+        </div>
+
+        <div class="content-card p-6 mb-8">
+            <h3 class="text-lg font-semibold text-themed">Average Listed Price: <span class="text-blue-400">₱{{ summary_stats.avg_listed_price }}</span></h3>
+        </div>
+    </div>
+
+    <!-- Recent Pricing Entries Table -->
+    <div class="content-card p-6 mb-8">
+        <h3 class="text-lg font-semibold text-themed mb-4">Recent Pricing Entries</h3>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-700">
+                <thead class="bg-gray-900">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-themed-muted uppercase tracking-wider">Date</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-themed-muted uppercase tracking-wider">Unit ID</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-themed-muted uppercase tracking-wider">Listed Price (₱)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-themed-muted uppercase tracking-wider">Booked?</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-themed-muted uppercase tracking-wider">Lead Time</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-themed-muted uppercase tracking-wider">Day</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-themed-muted uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700">
+                    {% for entry in dashboard_data %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-themed">{{ entry.date }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-themed">{{ entry.unit_id }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-themed font-medium">₱{{ entry.listed_price }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-themed">{{ entry.was_booked }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-themed">{{ entry.lead_time }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-themed">{{ entry.day_of_week }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <button onclick="deleteBooking('{{ entry.id }}', '{{ entry.date }}', '{{ entry.unit_id }}')" 
+                                    class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+                                    title="Delete this booking entry">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-4 text-center text-themed-muted">No pricing entries available.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border border-gray-700 w-96 shadow-lg rounded-md content-card">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-900">
+                    <svg class="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-themed mt-2">Delete Booking Entry</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-sm text-themed-muted" id="delete-message">
+                        Are you sure you want to delete this booking entry? This action cannot be undone.
+                    </p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="confirm-delete" class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        Delete
+                    </button>
+                    <button id="cancel-delete" class="px-4 py-2 bg-gray-700 text-white text-base font-medium rounded-md w-24 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="toastNotification" class="hidden fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg transition-opacity duration-300 opacity-0">
@@ -360,6 +427,54 @@
 
 {% block scripts_extra %}
 <script>
+    // Delete booking functionality
+    let deleteEntryId = null;
+    
+    function deleteBooking(entryId, date, unitId) {
+        deleteEntryId = entryId;
+        document.getElementById('delete-message').textContent = 
+            `Are you sure you want to delete the booking entry for ${unitId} on ${date}? This action cannot be undone.`;
+        document.getElementById('delete-modal').classList.remove('hidden');
+    }
+    
+    document.getElementById('confirm-delete').addEventListener('click', async function() {
+        if (!deleteEntryId) return;
+        
+        try {
+            const response = await fetch(`/api/delete-booking/${deleteEntryId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const errorData = await response.json();
+                alert(`Error deleting booking: ${errorData.error}`);
+            }
+        } catch (error) {
+            console.error('Error deleting booking:', error);
+            alert('Failed to delete booking entry');
+        }
+        
+        document.getElementById('delete-modal').classList.add('hidden');
+        deleteEntryId = null;
+    });
+    
+    document.getElementById('cancel-delete').addEventListener('click', function() {
+        document.getElementById('delete-modal').classList.add('hidden');
+        deleteEntryId = null;
+    });
+    
+    document.getElementById('delete-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.add('hidden');
+            deleteEntryId = null;
+        }
+    });
+
     document.addEventListener('DOMContentLoaded', function() {
         // Calendar state
         let currentDate = new Date();
@@ -392,11 +507,21 @@
         // Unit card selection handlers
         unitCards.forEach(card => {
             card.addEventListener('click', async function() {
-                // Remove selected class from all cards
-                unitCards.forEach(c => c.classList.remove('selected'));
+                // Remove active state from all cards
+                unitCards.forEach(c => {
+                    c.classList.remove('border-blue-500', 'bg-gray-800', 'ring-2', 'ring-blue-500', 'selected');
+                    const checkmark = c.querySelector('.checkmark');
+                    if (checkmark) {
+                        checkmark.classList.add('hidden');
+                    }
+                });
                 
-                // Add selected class to clicked card
-                this.classList.add('selected');
+                // Add active state to clicked card
+                this.classList.add('border-blue-500', 'bg-gray-800', 'ring-2', 'ring-blue-500', 'selected');
+                const checkmark = this.querySelector('.checkmark');
+                if (checkmark) {
+                    checkmark.classList.remove('hidden');
+                }
                 
                 // Clear any previously selected dates when switching units
                 selectedDates.clear();
@@ -419,6 +544,11 @@
                 }
             });
         });
+        
+        // Auto-select first card on page load
+        if (unitCards.length > 0) {
+            unitCards[0].click();
+        }
 
         // Calendar navigation
         prevMonthBtn.addEventListener('click', async () => {

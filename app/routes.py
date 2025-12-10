@@ -1,10 +1,39 @@
 import os
 
-from flask import Blueprint, jsonify, render_template, request, send_from_directory, current_app
+from flask import Blueprint, jsonify, render_template, request, send_from_directory, current_app, make_response
 from marshmallow import Schema, fields, ValidationError
 from app.models import db, Property, PriceLog, Cluster
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
+from functools import wraps
+
+# Caching decorator for quick data reuse
+_cache = {}
+
+def cache_properties():
+    """Cache properties list for 5 minutes"""
+    if 'properties' not in _cache or (datetime.now() - _cache.get('properties_time', datetime.now())).total_seconds() > 300:
+        properties = Property.query.with_entities(Property.unit_id, Property.property_name).all()
+        _cache['properties'] = [
+            {
+                'unit_id': unit_id,
+                'property_name': property_name,
+            } for unit_id, property_name in properties
+        ]
+        _cache['properties_time'] = datetime.now()
+    return _cache['properties']
+
+def add_cache_headers(max_age=3600):
+    """Decorator to add cache headers to responses"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            response = make_response(f(*args, **kwargs))
+            response.headers['Cache-Control'] = f'public, max-age={max_age}'
+            response.headers['X-Powered-By'] = 'Rentalytics'
+            return response
+        return decorated_function
+    return decorator
 
 # Validation schemas
 class PriceLogSchema(Schema):
@@ -38,19 +67,23 @@ def generate_unit_id():
         counter += 1
 
 @main.route('/')
+@add_cache_headers(3600)
 def index():
     return render_template('index.html')
 
 @main.route('/insights')
+@add_cache_headers(1800)
 def insights():
     return render_template('insights.html')
 
 @main.route('/manage')
+@add_cache_headers(1800)
 def manage():
     return render_template('manage.html')
 
 
 @main.route('/api/dashboard', methods=['GET'])
+@add_cache_headers(300)
 def api_dashboard():
     """Return summary stats and recent price logs for dashboard."""
     price_logs = PriceLog.query.order_by(PriceLog.date.desc()).limit(100).all()
@@ -89,6 +122,7 @@ def ping():
 
 # New route for data entry form
 @main.route('/log_entry', methods=['GET', 'POST'])
+@add_cache_headers(300)
 def log_entry():
     if request.method == 'POST':
         try:
@@ -136,6 +170,12 @@ def log_entry():
             )
             db.session.add(new_log)
             db.session.commit()
+            
+            # Clear cache on new entry
+            if 'dashboard_data' in _cache:
+                del _cache['dashboard_data']
+            if 'summary_stats' in _cache:
+                del _cache['summary_stats']
 
             return jsonify({'message': 'Price log entry created successfully'}), 201
             
@@ -144,17 +184,45 @@ def log_entry():
             db.session.rollback()
             return jsonify({'error': f'Database error: {str(e)}'}), 500
     
-    properties = Property.query.with_entities(Property.unit_id, Property.property_name).all()
-    units = [
+    # Use cached properties
+    units = cache_properties()
+    
+    # Calculate summary statistics
+    price_logs = PriceLog.query.all()
+    total_entries = len(price_logs)
+    booked_entries = sum(1 for log in price_logs if log.was_booked)
+    not_booked_entries = total_entries - booked_entries
+
+    total_listed_price = sum(log.our_listed_price for log in price_logs)
+    avg_listed_price = (total_listed_price / total_entries) if total_entries > 0 else 0
+
+    summary_stats = {
+        'total_entries': total_entries,
+        'booked_entries': booked_entries,
+        'not_booked_entries': not_booked_entries,
+        'avg_listed_price': round(avg_listed_price, 2)
+    }
+    
+    # Prepare pricing entries data for display
+    price_logs_sorted = PriceLog.query.order_by(PriceLog.date.desc()).all()
+    dashboard_data = [
         {
-            'unit_id': unit_id,
-            'property_name': property_name,
-        } for unit_id, property_name in properties
+            'id': str(log.id),
+            'date': log.date.isoformat(),
+            'unit_id': log.property.unit_id,
+            'listed_price': log.our_listed_price,
+            'was_booked': 'Yes' if log.was_booked else 'No',
+            'lead_time': log.lead_time if log.lead_time is not None else '-',
+            'day_of_week': log.day_of_week
+        } for log in price_logs_sorted
     ]
-    return render_template('data_entry.html', units=units)
+    
+    response = render_template('data_entry.html', units=units, summary_stats=summary_stats, dashboard_data=dashboard_data)
+    return response
 
 
 @main.route('/dashboard')
+@add_cache_headers(300)
 def dashboard():
     # Fetch all PriceLog entries, ordered by date descending
     price_logs = PriceLog.query.order_by(PriceLog.date.desc()).all()
@@ -192,6 +260,7 @@ def dashboard():
 
 # Data Entry Blueprint Routes
 @data_entry_bp.route('/api/properties', methods=['GET'])
+@add_cache_headers(600)
 def get_properties_for_dropdown():
     properties = Property.query.with_entities(Property.unit_id, Property.property_name).all()
     return jsonify([
@@ -203,6 +272,7 @@ def get_properties_for_dropdown():
     ])
 
 @data_entry_bp.route('/api/unit-bookings/<string:unit_id>', methods=['GET'])
+@add_cache_headers(600)
 def get_unit_bookings(unit_id):
     """Get existing booking data for a specific unit"""
     property_obj = Property.query.filter_by(unit_id=unit_id).first()
@@ -258,6 +328,13 @@ def log_price():
         )
         db.session.add(new_log)
         db.session.commit()
+        
+        # Clear cache on new entry
+        if 'dashboard_data' in _cache:
+            del _cache['dashboard_data']
+        if 'summary_stats' in _cache:
+            del _cache['summary_stats']
+            
         return jsonify({'message': 'Price log recorded successfully', 'log_id': new_log.id}), 201
     except Exception as e:
         db.session.rollback()
@@ -265,6 +342,7 @@ def log_price():
 
 # Insights Blueprint Routes
 @insights_bp.route('/api/insights/<string:unit_id>', methods=['GET'])
+@add_cache_headers(300)
 def get_insights(unit_id):
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
@@ -408,6 +486,7 @@ def handle_single_cluster(cluster_id):
         return jsonify({'message': 'Cluster deleted successfully'}), 204
 
 @management_bp.route('/api/properties/all', methods=['GET'])
+@add_cache_headers(600)
 def get_all_properties():
     properties = Property.query.all()
     return jsonify([p.to_dict() for p in properties])
@@ -480,6 +559,13 @@ def delete_booking(booking_id):
 
         db.session.delete(booking)
         db.session.commit()
+        
+        # Clear cache on delete
+        if 'dashboard_data' in _cache:
+            del _cache['dashboard_data']
+        if 'summary_stats' in _cache:
+            del _cache['summary_stats']
+            
         return jsonify({'message': 'Booking deleted successfully'}), 200
 
     except Exception as e:
