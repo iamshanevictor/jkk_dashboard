@@ -1,11 +1,15 @@
 <template>
-  <v-container class="py-8">
-    <div class="text-center mb-6">
-      <h2 class="text-h5 font-weight-bold mb-2">Booking Calendar</h2>
-      <p class="text-body-2 text-grey-darken-1">Select dates to record pricing and booking information.</p>
+  <div class="data-entry-view">
+    <!-- Header -->
+    <div class="d-flex justify-space-between align-center mb-8 flex-wrap gap-3">
+      <div>
+        <h1 class="text-h5 font-weight-bold" style="color: white;">Booking Calendar</h1>
+        <p class="text-body-2 mt-2" style="color: #8b8b8b;">Record pricing and booking information by date</p>
+      </div>
     </div>
 
-    <v-row class="mb-6" v-if="units.length">
+    <!-- Property Selection -->
+    <v-row class="mb-8">
       <v-col
         v-for="unit in units"
         :key="unit.unit_id"
@@ -15,108 +19,222 @@
         lg="3"
       >
         <v-card
-          class="unit-card"
-          :elevation="selectedUnit?.unit_id === unit.unit_id ? 6 : 1"
-          :class="{ 'selected-unit': selectedUnit?.unit_id === unit.unit_id }"
-          role="button"
+          elevation="0"
+          class="property-card cursor-pointer transition-all h-100"
+          :style="{
+            background: selectedUnit?.unit_id === unit.unit_id ? 'rgba(59, 130, 246, 0.2)' : '#2a2a2a',
+            border: selectedUnit?.unit_id === unit.unit_id 
+              ? '2px solid #3b82f6' 
+              : '1px solid rgba(255,255,255,0.1)',
+          }"
           @click="selectUnit(unit)"
         >
-          <v-card-text class="text-center">
-            <v-icon size="32" class="mb-2" color="primary">mdi-home-analytics</v-icon>
-            <div class="text-subtitle-1 font-weight-bold">{{ unit.property_name }}</div>
-            <div class="text-body-2 text-grey">{{ unit.unit_id }}</div>
-            <div class="text-caption text-grey-darken-1">Click to manage</div>
+          <v-card-text class="text-center py-6">
+            <v-icon 
+              size="40" 
+              class="mb-2"
+              :color="selectedUnit?.unit_id === unit.unit_id ? '#3b82f6' : '#606060'"
+            >
+              mdi-home
+            </v-icon>
+            <div class="text-subtitle-2 font-weight-bold" style="color: white;">{{ unit.property_name }}</div>
+            <div class="text-caption mt-1" style="color: #8b8b8b;">{{ unit.unit_id }}</div>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
 
-    <v-alert v-else type="info" border="start" color="primary" class="mb-6">
-      No properties found. Add properties in Manage.
+    <v-alert 
+      v-if="!units.length" 
+      type="info" 
+      border="start" 
+      color="primary" 
+      class="mb-8"
+      style="background: rgba(59, 130, 246, 0.1); border-left-color: #3b82f6; color: #93c5fd;"
+    >
+      No properties found. Add properties in the <strong>Manage</strong> section.
     </v-alert>
 
-    <div v-if="selectedUnit">
-      <div class="calendar-header">
-        <v-btn icon variant="text" @click="changeMonth(-1)"><v-icon>mdi-chevron-left</v-icon></v-btn>
-        <div class="text-h6 font-weight-semibold">{{ monthYearLabel }}</div>
-        <v-btn icon variant="text" @click="changeMonth(1)"><v-icon>mdi-chevron-right</v-icon></v-btn>
-      </div>
-
-      <div class="legend">
-        <div><span class="swatch selected"></span>Selected</div>
-        <div><span class="swatch booked"></span>Booked</div>
-        <div><span class="swatch available"></span>Available</div>
-        <div><span class="swatch past"></span>Past</div>
-      </div>
-
-      <div class="calendar-wrapper">
-        <div class="day-headers">
-          <div v-for="d in days" :key="d" class="day-header">{{ d }}</div>
+    <!-- Calendar Section -->
+    <v-card 
+      v-if="selectedUnit" 
+      elevation="0" 
+      class="mb-8"
+      style="background: #2a2a2a; border: 1px solid rgba(255,255,255,0.1);"
+    >
+      <v-card-text class="py-6">
+        <!-- Calendar Header -->
+        <div class="d-flex align-center justify-space-between mb-6">
+          <v-btn icon="mdi-chevron-left" variant="text" @click="changeMonth(-1)" style="color: #3b82f6;"></v-btn>
+          <div class="text-h6 font-weight-bold" style="min-width: 200px; text-align: center; color: white;">
+            {{ monthYearLabel }}
+          </div>
+          <v-btn icon="mdi-chevron-right" variant="text" @click="changeMonth(1)" style="color: #3b82f6;"></v-btn>
         </div>
-        <div class="calendar-grid">
-          <div
-            v-for="day in calendarDays"
-            :key="day.key"
-            class="calendar-day"
-            :class="day.classes"
-            @click="toggleDay(day)"
-          >
-            <div class="day-number">{{ day.label }}</div>
-            <div v-if="day.price" class="price-indicator">₱{{ day.price }}</div>
+
+        <!-- Legend -->
+        <div class="d-flex flex-wrap gap-4 mb-8 justify-center">
+          <div class="d-flex align-center gap-2">
+            <div style="width: 16px; height: 16px; background: #3b82f6; border-radius: 4px;"></div>
+            <span class="text-caption" style="color: #b0b0b0;">Selected</span>
+          </div>
+          <div class="d-flex align-center gap-2">
+            <div style="width: 16px; height: 16px; background: #ef4444; border-radius: 4px;"></div>
+            <span class="text-caption" style="color: #b0b0b0;">Booked</span>
+          </div>
+          <div class="d-flex align-center gap-2">
+            <div style="width: 16px; height: 16px; background: #505050; border-radius: 4px;"></div>
+            <span class="text-caption" style="color: #b0b0b0;">Available</span>
+          </div>
+          <div class="d-flex align-center gap-2">
+            <div style="width: 16px; height: 16px; background: #3a3a3a; border-radius: 4px;"></div>
+            <span class="text-caption" style="color: #b0b0b0;">Past</span>
           </div>
         </div>
-      </div>
 
-      <div v-if="selectionRanges.length" class="selection-summary">
-        <div class="text-subtitle-2 font-weight-semibold mb-2">Selected Dates</div>
-        <div class="chips">
-          <v-chip
-            v-for="range in selectionRanges"
-            :key="range.start + range.end"
-            color="primary"
-            variant="tonal"
-            class="mr-2 mb-2"
-            label
-          >
-            {{ formatRange(range) }}
-          </v-chip>
+        <!-- Calendar Grid -->
+        <div style="overflow-x: auto;">
+          <div style="display: grid; grid-template-columns: repeat(7, minmax(100px, 1fr)); gap: 8px;">
+            <!-- Day Headers -->
+            <div
+              v-for="day in days"
+              :key="day"
+              style="font-weight: 600; text-align: center; padding: 8px; color: #606060; font-size: 12px;"
+            >
+              {{ day }}
+            </div>
+
+            <!-- Calendar Days -->
+            <div
+              v-for="calDay in calendarDays"
+              :key="calDay.key"
+              class="calendar-cell"
+              :style="getCellStyle(calDay)"
+              @click="toggleDay(calDay)"
+            >
+              <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">{{ calDay.label }}</div>
+              <div v-if="calDay.price" style="font-size: 11px; color: #aaa;">₱{{ calDay.price }}</div>
+            </div>
+          </div>
         </div>
-        <v-btn color="primary" prepend-icon="mdi-pencil" @click="showDialog = true">
-          Set Pricing & Booking Info
-        </v-btn>
-      </div>
-    </div>
 
+        <!-- Selection Summary -->
+        <div v-if="selectionRanges.length" class="mt-8">
+          <div class="text-caption" style="color: #8b8b8b;">Selected Dates:</div>
+          <div class="d-flex flex-wrap gap-2 mt-2">
+            <v-chip 
+              v-for="range in selectionRanges" 
+              :key="`${range.start}-${range.end}`"
+              size="small"
+              style="background: rgba(59, 130, 246, 0.2); color: #93c5fd;"
+            >
+              {{ formatRange(range) }}
+            </v-chip>
+          </div>
+          <v-btn 
+            class="mt-4"
+            @click="showDialog = true"
+            prepend-icon="mdi-content-save"
+            variant="flat"
+            style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;"
+          >
+            Save {{ selectedDates.size }} Entries
+          </v-btn>
+        </div>
+      </v-card-text>
+    </v-card>
+
+    <!-- Bulk Entry Dialog -->
     <v-dialog v-model="showDialog" max-width="480">
-      <v-card>
-        <v-card-title class="text-h6">Bulk Entry for Selected Dates</v-card-title>
-        <v-card-text>
+      <v-card elevation="0" style="background: #2a2a2a; border: 1px solid rgba(255,255,255,0.1);">
+        <v-card-title class="text-subtitle-1 font-weight-bold" style="color: white;">Bulk Entry</v-card-title>
+        <v-divider style="border-color: rgba(255,255,255,0.1);"></v-divider>
+        <v-card-text class="py-6">
           <v-form @submit.prevent="saveEntries">
             <v-text-field
               v-model.number="bulkPrice"
-              label="Listed Price (₱)"
+              label="Listed Price"
               type="number"
+              prefix="₱"
               min="0"
               step="0.01"
+              variant="outlined"
+              density="compact"
               required
+              class="mb-4"
+              style="--v-field-background-color: #1a1a1a;"
             ></v-text-field>
-            <v-radio-group v-model="bulkBooking" label="Booking Status" inline>
-              <v-radio label="All dates are booked" value="booked"></v-radio>
-              <v-radio label="All dates are available" value="available"></v-radio>
+            <div class="text-body-2 font-weight-medium mb-3" style="color: white;">Booking Status</div>
+            <v-radio-group v-model="bulkBooking" inline>
+              <v-radio label="Booked" value="booked" style="color: white;"></v-radio>
+              <v-radio label="Available" value="available" style="color: white;"></v-radio>
             </v-radio-group>
           </v-form>
         </v-card-text>
-        <v-card-actions class="justify-end">
+        <v-divider style="border-color: rgba(255,255,255,0.1);"></v-divider>
+        <v-card-actions class="justify-end pa-4">
+          <v-btn variant="text" @click="showDialog = false" style="color: #606060;">Cancel</v-btn>
+          <v-btn 
+            variant="flat" 
+            :loading="saving" 
+            @click="saveEntries"
+            style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;"
+          >
+            Save
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Snackbar -->
+    <v-snackbar 
+      v-model="snackbar.show" 
+      :color="snackbar.color" 
+      :timeout="2200"
+      style="background: rgba(0,0,0,0.8) !important;"
+    >
+      {{ snackbar.message }}
+    </v-snackbar>
+  </div>
+</template>
+    <v-dialog v-model="showDialog" max-width="480">
+      <v-card elevation="1">
+        <v-card-title class="text-subtitle-1 font-weight-bold">Bulk Entry</v-card-title>
+        <v-divider></v-divider>
+        <v-card-text class="py-6">
+          <v-form @submit.prevent="saveEntries">
+            <v-text-field
+              v-model.number="bulkPrice"
+              label="Listed Price"
+              type="number"
+              prefix="₱"
+              min="0"
+              step="0.01"
+              variant="outlined"
+              density="compact"
+              required
+              class="mb-4"
+            ></v-text-field>
+            <div class="text-body-2 font-weight-medium mb-2">Booking Status</div>
+            <v-radio-group v-model="bulkBooking" inline>
+              <v-radio label="Booked" value="booked"></v-radio>
+              <v-radio label="Available" value="available"></v-radio>
+            </v-radio-group>
+          </v-form>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions class="justify-end pa-4">
           <v-btn variant="text" @click="showDialog = false">Cancel</v-btn>
           <v-btn color="primary" variant="flat" :loading="saving" @click="saveEntries">Save</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
+    <!-- Snackbar -->
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="2200">
       {{ snackbar.message }}
     </v-snackbar>
-  </v-container>
+  </div>
 </template>
 
 <script setup>
@@ -157,8 +275,7 @@ const calendarDays = computed(() => {
     cells.push({
       key: `prev-${i}`,
       label: d.getDate(),
-      classes: ['other-month'],
-      disabled: true,
+      isOtherMonth: true,
     })
   }
 
@@ -167,15 +284,9 @@ const calendarDays = computed(() => {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
     const isPast = dateStr < todayStr
     const booking = existingBookings.value.get(dateStr)
-    const isBooked = booking?.was_booked
+    const isBooked = booking?.was_booked === 'Y'
     const isSelected = selectedDates.value.has(dateStr)
-
-    const classes = ['in-month']
-    if (isPast) classes.push('past')
-    if (isBooked) classes.push('booked')
-    if (!isPast && !isBooked) classes.push('available')
-    if (isSelected && !isPast && !isBooked) classes.push('selected')
-    if (dateStr === todayStr) classes.push('today')
+    const isToday = dateStr === todayStr
 
     cells.push({
       key: dateStr,
@@ -185,21 +296,100 @@ const calendarDays = computed(() => {
       isPast,
       isBooked,
       isSelected,
+      isToday,
       disabled: isPast || isBooked,
-      classes,
+      isOtherMonth: false,
     })
   }
 
   // Next month fillers
   while (cells.length < 42) {
     const idx = cells.length - daysInMonth - startOffset + 1
-    cells.push({ key: `next-${idx}`, label: idx, classes: ['other-month'], disabled: true })
+    cells.push({ key: `next-${idx}`, label: idx, isOtherMonth: true })
   }
 
   return cells
 })
 
 const selectionRanges = computed(() => buildRanges([...selectedDates.value].sort()))
+
+function getCellStyle(day) {
+  if (day.isOtherMonth) {
+    return {
+      backgroundColor: '#1a1a1a',
+      color: '#505050',
+      cursor: 'default',
+      borderRadius: '8px',
+      padding: '12px',
+      minHeight: '70px',
+      display: 'flex',
+      alignItems: 'flex-start',
+      flexDirection: 'column',
+      justifyContent: 'flex-start',
+      border: '1px solid rgba(255,255,255,0.05)',
+    }
+  }
+  if (day.isPast) {
+    return {
+      backgroundColor: '#1a1a1a',
+      color: '#505050',
+      cursor: 'not-allowed',
+      opacity: '0.5',
+      borderRadius: '8px',
+      padding: '12px',
+      minHeight: '70px',
+      display: 'flex',
+      alignItems: 'flex-start',
+      flexDirection: 'column',
+      justifyContent: 'flex-start',
+      border: '1px solid rgba(255,255,255,0.05)',
+    }
+  }
+  if (day.isBooked) {
+    return {
+      backgroundColor: '#ef4444',
+      color: 'white',
+      cursor: 'not-allowed',
+      borderRadius: '8px',
+      padding: '12px',
+      minHeight: '70px',
+      display: 'flex',
+      alignItems: 'flex-start',
+      flexDirection: 'column',
+      justifyContent: 'flex-start',
+      border: day.isToday ? '2px solid #b91c1c' : '1px solid rgba(255,255,255,0.1)',
+    }
+  }
+  if (day.isSelected) {
+    return {
+      backgroundColor: '#3b82f6',
+      color: 'white',
+      cursor: 'pointer',
+      borderRadius: '8px',
+      padding: '12px',
+      minHeight: '70px',
+      display: 'flex',
+      alignItems: 'flex-start',
+      flexDirection: 'column',
+      justifyContent: 'flex-start',
+      border: '2px solid #1d4ed8',
+    }
+  }
+  return {
+    backgroundColor: '#3a3a3a',
+    color: '#b0b0b0',
+    cursor: 'pointer',
+    borderRadius: '8px',
+    padding: '12px',
+    minHeight: '70px',
+    display: 'flex',
+    alignItems: 'flex-start',
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    transition: 'transform 0.12s ease, box-shadow 0.12s ease',
+    border: day.isToday ? '2px solid #3b82f6' : '1px solid rgba(255,255,255,0.1)',
+  }
+}
 
 function toast(message, color = 'success') {
   snackbar.message = message
@@ -318,6 +508,7 @@ async function saveEntries() {
     toast(`Saved ${selectedDates.value.size} price entries`)
     showDialog.value = false
     selectedDates.value = new Set()
+    bulkPrice.value = null
     await loadBookings()
   } catch (err) {
     console.error(err)
@@ -331,140 +522,28 @@ onMounted(fetchUnits)
 </script>
 
 <style scoped>
-.calendar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  max-width: 480px;
-  margin: 0 auto 12px;
-}
-
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-  margin-bottom: 12px;
-  font-size: 14px;
-}
-
-.legend .swatch {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  margin-right: 6px;
-  border-radius: 3px;
-  border: 1px solid #ccc;
-}
-
-.legend .selected { background: #3b82f6; }
-.legend .booked { background: #ef4444; }
-.legend .available { background: #e5e7eb; }
-.legend .past { background: #f3f4f6; }
-
-.calendar-wrapper {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  padding: 12px;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-.day-headers {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  text-align: center;
-  font-weight: 600;
-  color: #4b5563;
-  padding-bottom: 8px;
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-}
-
-.calendar-day {
-  position: relative;
-  min-height: 74px;
-  border-radius: 10px;
-  padding: 6px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+.cursor-pointer {
   cursor: pointer;
-  background: #f3f4f6;
 }
 
-.calendar-day.in-month.available:hover {
+.transition-all {
+  transition: all 0.2s ease;
+}
+
+.border-thick {
+  border: 3px solid !important;
+}
+
+.border-primary {
+  border-color: #3b82f6 !important;
+}
+
+.calendar-cell {
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.calendar-cell:hover:not([style*="not-allowed"]) {
   transform: translateY(-2px);
   box-shadow: 0 6px 14px rgba(59, 130, 246, 0.12);
-}
-
-.calendar-day.other-month {
-  background: #fafafa;
-  color: #9ca3af;
-  cursor: default;
-}
-
-.calendar-day.past {
-  background: #f3f4f6;
-  color: #9ca3af;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.calendar-day.booked {
-  background: #ef4444;
-  color: white;
-  cursor: not-allowed;
-}
-
-.calendar-day.selected {
-  background: #3b82f6;
-  color: white;
-  font-weight: 700;
-}
-
-.calendar-day.today {
-  border: 2px solid #3b82f6;
-}
-
-.day-number {
-  font-weight: 600;
-  font-size: 16px;
-}
-
-.price-indicator {
-  position: absolute;
-  bottom: 6px;
-  right: 6px;
-  font-size: 12px;
-  background-color: rgba(0,0,0,0.7);
-  color: white;
-  padding: 2px 6px;
-  border-radius: 6px;
-}
-
-.selection-summary {
-  margin: 18px auto 0;
-  background: #e8f1ff;
-  border: 1px solid #cbdffb;
-  border-radius: 12px;
-  padding: 16px;
-  max-width: 900px;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-.unit-card.selected-unit {
-  border: 2px solid #3b82f6;
 }
 </style>
