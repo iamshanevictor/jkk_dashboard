@@ -115,7 +115,7 @@
 
 <script setup>
 import { Chart, registerables } from 'chart.js'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 
 Chart.register(...registerables)
 
@@ -175,6 +175,7 @@ async function fetchInsights() {
       return
     }
     insights.value = data.insights
+    await nextTick()
     renderCharts()
   } catch (err) {
     console.error(err)
