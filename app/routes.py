@@ -49,6 +49,40 @@ def insights():
 def manage():
     return render_template('manage.html')
 
+
+@main.route('/api/dashboard', methods=['GET'])
+def api_dashboard():
+    """Return summary stats and recent price logs for dashboard."""
+    price_logs = PriceLog.query.order_by(PriceLog.date.desc()).limit(100).all()
+
+    total_entries = len(price_logs)
+    booked_entries = sum(1 for log in price_logs if log.was_booked)
+    not_booked_entries = total_entries - booked_entries
+    total_listed_price = sum(log.our_listed_price for log in price_logs)
+    avg_listed_price = round((total_listed_price / total_entries), 2) if total_entries else 0
+
+    dashboard_data = [
+        {
+            'id': log.id,
+            'date': log.date.isoformat(),
+            'unit_id': log.property.unit_id if log.property else None,
+            'listed_price': log.our_listed_price,
+            'was_booked': 'Yes' if log.was_booked else 'No',
+            'lead_time': log.lead_time if log.lead_time is not None else '-',
+            'day_of_week': log.day_of_week,
+        }
+        for log in price_logs
+    ]
+
+    summary_stats = {
+        'total_entries': total_entries,
+        'booked_entries': booked_entries,
+        'not_booked_entries': not_booked_entries,
+        'avg_listed_price': avg_listed_price,
+    }
+
+    return jsonify({'summary_stats': summary_stats, 'dashboard_data': dashboard_data}), 200
+
 @main.route('/ping')
 def ping():
     return jsonify({'status': 'ok'}), 200
