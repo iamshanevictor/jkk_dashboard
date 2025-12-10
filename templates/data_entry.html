@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Precision Pricing - Data Entry{% endblock %}
+{% block title %}Rentalytics - Data Entry{% endblock %}
 
 {% block head_extra %}
 <style>
@@ -294,7 +294,7 @@
             <h4 class="text-lg font-semibold text-blue-800 mb-4">Selected Dates Summary</h4>
             <div id="selected-dates-list" class="mb-4"></div>
             <p class="text-sm text-blue-600 mb-4">Click "Set Pricing & Booking Info" to configure details for all selected dates.</p>
-            <button id="configure-dates-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                            <button type="button" id="configure-dates-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">
                 Set Pricing & Booking Info
             </button>
         </div>
@@ -305,7 +305,7 @@
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold text-gray-800">Bulk Entry for Selected Dates</h3>
-                        <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+                        <button type="button" id="close-modal" class="text-gray-400 hover:text-gray-600" aria-label="Close bulk entry modal">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
@@ -344,7 +344,7 @@
                             </button>
                             <button type="submit" id="save-bulk" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                                 Save All Dates
-            </button>
+                            </button>
                         </div>
         </form>
                 </div>
