@@ -1,5 +1,6 @@
 import os
 from flask import Flask
+from flask_cors import CORS
 from app.config import config
 from app.models import db
 
@@ -13,6 +14,9 @@ def create_app(config_name=None):
     config[config_name].init_app(app)
 
     db.init_app(app)
+    
+    # Enable CORS for frontend
+    CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "http://localhost:5174"]}})
 
     # Security headers
     @app.after_request

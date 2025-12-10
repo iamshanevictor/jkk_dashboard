@@ -47,6 +47,10 @@ def insights():
 def manage():
     return render_template('manage.html')
 
+@main.route('/ping')
+def ping():
+    return jsonify({'status': 'ok'}), 200
+
 # New route for data entry form
 @main.route('/log_entry', methods=['GET', 'POST'])
 def log_entry():

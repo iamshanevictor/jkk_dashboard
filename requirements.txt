@@ -8,3 +8,4 @@ python-dotenv==1.0.1
 gunicorn==22.0.0
 marshmallow==3.22.0
 flask_sqlalchemy
+flask-cors==4.0.0
