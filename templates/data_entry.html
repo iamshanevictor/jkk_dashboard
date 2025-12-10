@@ -22,51 +22,61 @@
         position: relative;
         font-size: 14px;
         border-radius: 8px;
+        background-color: #2a2a2a;
+        color: #e5e7eb;
+        border: 1px solid #3a3a3a;
     }
     
     .calendar-day:hover {
         transform: scale(1.05);
         z-index: 10;
+        background-color: #3a3a3a;
     }
     
     .calendar-day.other-month {
-        color: #9CA3AF;
-        background-color: #F9FAFB;
+        color: #6B7280;
+        background-color: #1a1a1a;
+        opacity: 0.5;
     }
     
     .calendar-day.today {
         border: 2px solid #3B82F6;
         font-weight: bold;
+        background-color: #2a2a2a;
+        color: #ffffff;
     }
     
     .calendar-day.selected {
         background-color: #3B82F6;
         color: white;
         font-weight: bold;
+        border-color: #3B82F6;
     }
     
     .calendar-day.booked {
         background-color: #EF4444;
         color: white;
+        border-color: #EF4444;
     }
     
     .calendar-day.past {
-        background-color: #F3F4F6 !important;
-        color: #9CA3AF !important;
+        background-color: #1a1a1a !important;
+        color: #4B5563 !important;
         cursor: not-allowed !important;
-        opacity: 0.6 !important;
+        opacity: 0.3 !important;
+        border-color: #2a2a2a !important;
     }
     
     .calendar-day.past:hover {
         transform: none !important;
         cursor: not-allowed !important;
-        background-color: #F3F4F6 !important;
+        background-color: #1a1a1a !important;
     }
     
     /* Ensure past dates always look disabled even if they have other classes */
     .calendar-day.past.selected {
-        background-color: #F3F4F6 !important;
-        color: #9CA3AF !important;
+        background-color: #1a1a1a !important;
+        color: #4B5563 !important;
     }
     
     .calendar-day.disabled {
@@ -107,8 +117,8 @@
 
     /* Unit Card Styles */
     .unit-card {
-        background: #ffffff;
-        border: 2px solid #e5e7eb;
+        background: #1a1a1a;
+        border: 2px solid #2a2a2a;
         border-radius: 12px;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
@@ -130,7 +140,8 @@
     .unit-card:hover {
         border-color: #3b82f6;
         transform: translateY(-4px);
-        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15);
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        background: #2a2a2a;
     }
     
     .unit-card:hover::before {
@@ -160,6 +171,10 @@
     .unit-card.selected .text-gray-600 {
         color: white !important;
     }
+
+    .unit-card.selected .text-gray-400 {
+        color: #e0e7ff !important;
+    }
     
     .unit-card:focus {
         outline: none;
@@ -185,17 +200,19 @@
 {% endblock %}
 
 {% block content %}
-    <h2 class="text-2xl font-semibold mb-6 text-gray-800">Booking Calendar</h2>
-    <p class="text-gray-600 mb-6 text-center">Select dates to record pricing and booking information. Click and drag to select multiple dates.</p>
+    <div class="mb-6">
+        <h2 class="text-2xl font-semibold text-white">Booking Calendar</h2>
+        <p class="text-gray-400 text-sm mt-1">Select dates to record pricing and booking information. Click and drag to select multiple dates.</p>
+    </div>
 
     <!-- Unit Selection -->
     <div class="mb-8">
-        <h3 class="text-lg font-medium text-gray-900 mb-4 text-center">
-            Select Property Unit <span class="text-red-500" aria-label="required">*</span>
+        <h3 class="text-lg font-medium text-white mb-4 text-center">
+            Select Property Unit <span class="text-red-400" aria-label="required">*</span>
         </h3>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
             {% for unit in units %}
-            <div class="unit-card cursor-pointer border-2 border-gray-200 rounded-lg p-6 text-center transition-all duration-200 hover:border-blue-300 hover:shadow-md" 
+            <div class="unit-card cursor-pointer rounded-lg p-6 text-center transition-all duration-200" 
                  data-unit-id="{{ unit.unit_id }}" 
                  role="button" 
                  tabindex="0"
@@ -203,29 +220,29 @@
                 <div class="mb-3">
                     {% if 'STUDIO' in unit.property_name.upper() or 'STD' in unit.property_name.upper() %}
                         <!-- Hotel/Studio Icon -->
-                        <svg class="w-8 h-8 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg class="w-8 h-8 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                         </svg>
                     {% elif 'VILLA' in unit.property_name.upper() or 'HOUSE' in unit.property_name.upper() %}
                         <!-- House/Villa Icon -->
-                        <svg class="w-8 h-8 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg class="w-8 h-8 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                         </svg>
                     {% elif 'CONDO' in unit.property_name.upper() or 'APT' in unit.property_name.upper() %}
                         <!-- Building/Condo Icon -->
-                        <svg class="w-8 h-8 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg class="w-8 h-8 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                         </svg>
                     {% else %}
                         <!-- Default Home Icon -->
-                        <svg class="w-8 h-8 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg class="w-8 h-8 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                         </svg>
                     {% endif %}
                 </div>
-                <div class="font-bold text-lg text-gray-900 mb-1">{{ unit.property_name }}</div>
-                <div class="text-xs text-gray-400">{{ unit.unit_id }}</div>
-                <div class="text-sm text-gray-500">Click to manage</div>
+                <div class="font-bold text-lg text-white mb-1">{{ unit.property_name }}</div>
+                <div class="text-xs text-gray-500">{{ unit.unit_id }}</div>
+                <div class="text-sm text-gray-400">Click to manage</div>
             </div>
             {% endfor %}
         </div>
@@ -236,13 +253,13 @@
         <!-- Calendar Header -->
         <div class="max-w-4xl mx-auto mb-6">
             <div class="flex justify-between items-center mb-4">
-                <button id="prev-month" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-200" aria-label="Previous month">
+                <button id="prev-month" class="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white transition-colors duration-200" aria-label="Previous month">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                     </svg>
                 </button>
-                <h3 id="calendar-month-year" class="text-xl font-semibold text-gray-800"></h3>
-                <button id="next-month" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-200" aria-label="Next month">
+                <h3 id="calendar-month-year" class="text-xl font-semibold text-white"></h3>
+                <button id="next-month" class="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white transition-colors duration-200" aria-label="Next month">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                     </svg>
@@ -250,7 +267,7 @@
             </div>
 
             <!-- Legend -->
-            <div class="flex flex-wrap justify-center gap-6 text-sm mb-4">
+            <div class="flex flex-wrap justify-center gap-6 text-sm mb-4 text-gray-300">
                 <div class="flex items-center">
                     <div class="w-4 h-4 bg-blue-500 rounded mr-2"></div>
                     <span>Selected</span>
@@ -260,11 +277,11 @@
                     <span>Booked</span>
                 </div>
                 <div class="flex items-center">
-                    <div class="w-4 h-4 bg-gray-300 rounded mr-2"></div>
+                    <div class="w-4 h-4 bg-gray-700 rounded mr-2"></div>
                     <span>Available</span>
                 </div>
                 <div class="flex items-center">
-                    <div class="w-4 h-4 bg-gray-200 rounded mr-2 opacity-60"></div>
+                    <div class="w-4 h-4 bg-gray-800 rounded mr-2 opacity-60"></div>
                     <span class="text-gray-500">Past Date</span>
                 </div>
                 </div>
@@ -272,16 +289,16 @@
 
         <!-- Calendar Grid -->
         <div class="max-w-4xl mx-auto mb-8">
-            <div class="bg-white rounded-lg shadow-lg p-4">
+            <div class="content-card rounded-lg p-4">
                 <!-- Day Headers -->
                 <div class="calendar-grid mb-2">
-                    <div class="text-center font-semibold text-gray-600 py-2">Sun</div>
-                    <div class="text-center font-semibold text-gray-600 py-2">Mon</div>
-                    <div class="text-center font-semibold text-gray-600 py-2">Tue</div>
-                    <div class="text-center font-semibold text-gray-600 py-2">Wed</div>
-                    <div class="text-center font-semibold text-gray-600 py-2">Thu</div>
-                    <div class="text-center font-semibold text-gray-600 py-2">Fri</div>
-                    <div class="text-center font-semibold text-gray-600 py-2">Sat</div>
+                    <div class="text-center font-semibold text-gray-400 py-2">Sun</div>
+                    <div class="text-center font-semibold text-gray-400 py-2">Mon</div>
+                    <div class="text-center font-semibold text-gray-400 py-2">Tue</div>
+                    <div class="text-center font-semibold text-gray-400 py-2">Wed</div>
+                    <div class="text-center font-semibold text-gray-400 py-2">Thu</div>
+                    <div class="text-center font-semibold text-gray-400 py-2">Fri</div>
+                    <div class="text-center font-semibold text-gray-400 py-2">Sat</div>
             </div>
 
                 <!-- Calendar Days -->
@@ -290,22 +307,22 @@
             </div>
 
         <!-- Selection Summary -->
-        <div id="selection-summary" class="hidden max-w-2xl mx-auto mb-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
-            <h4 class="text-lg font-semibold text-blue-800 mb-4">Selected Dates Summary</h4>
-            <div id="selected-dates-list" class="mb-4"></div>
-            <p class="text-sm text-blue-600 mb-4">Click "Set Pricing & Booking Info" to configure details for all selected dates.</p>
+        <div id="selection-summary" class="hidden max-w-2xl mx-auto mb-8 p-6 content-card rounded-lg border-l-4 border-blue-500">
+            <h4 class="text-lg font-semibold text-blue-400 mb-4">Selected Dates Summary</h4>
+            <div id="selected-dates-list" class="mb-4 text-gray-300"></div>
+            <p class="text-sm text-gray-400 mb-4">Click "Set Pricing & Booking Info" to configure details for all selected dates.</p>
                             <button type="button" id="configure-dates-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">
                 Set Pricing & Booking Info
             </button>
         </div>
 
         <!-- Bulk Entry Modal -->
-        <div id="bulk-entry-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-lg max-w-md w-full max-h-screen overflow-y-auto">
+        <div id="bulk-entry-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div class="bg-gray-900 border border-gray-700 rounded-lg max-w-md w-full max-h-screen overflow-y-auto">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800">Bulk Entry for Selected Dates</h3>
-                        <button type="button" id="close-modal" class="text-gray-400 hover:text-gray-600" aria-label="Close bulk entry modal">
+                        <h3 class="text-lg font-semibold text-white">Bulk Entry for Selected Dates</h3>
+                        <button type="button" id="close-modal" class="text-gray-400 hover:text-gray-200" aria-label="Close bulk entry modal">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
@@ -314,18 +331,18 @@
 
                     <form id="bulk-entry-form" class="space-y-4">
                         <div>
-                            <label for="bulk-price" class="block text-sm font-medium text-gray-700 mb-2">
-                                Listed Price (₱) <span class="text-red-500">*</span>
+                            <label for="bulk-price" class="block text-sm font-medium text-gray-300 mb-2">
+                                Listed Price (₱) <span class="text-red-400">*</span>
                             </label>
                             <input type="number" id="bulk-price" name="bulk-price" step="0.01" min="0" required
-                                   class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                   class="block w-full bg-gray-800 text-white border-gray-700 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
             </div>
 
             <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Booking Status <span class="text-red-500">*</span>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Booking Status <span class="text-red-400">*</span>
                             </label>
-                            <div class="space-y-2">
+                            <div class="space-y-2 text-gray-300">
                                 <label class="flex items-center">
                                     <input type="radio" name="bulk-booking" value="booked" class="mr-2" checked>
                                     <span>All dates are booked</span>
@@ -339,7 +356,7 @@
 
 
                         <div class="flex justify-end space-x-3 pt-4">
-                            <button type="button" id="cancel-bulk" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+                            <button type="button" id="cancel-bulk" class="px-4 py-2 text-gray-300 border border-gray-600 rounded-lg hover:bg-gray-800">
                                 Cancel
                             </button>
                             <button type="submit" id="save-bulk" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">

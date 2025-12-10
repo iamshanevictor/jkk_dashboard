@@ -9,63 +9,120 @@
     <style>
         body {
             font-family: 'Questrial', sans-serif;
+            background-color: #0f0f0f;
         }
         h1, h2, h3, h4, h5, h6 {
             font-family: 'Questrial', sans-serif;
         }
+        .sidebar {
+            background-color: #1a1a1a;
+            width: 240px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            overflow-y: auto;
+            border-right: 1px solid #2a2a2a;
+        }
+        .main-content {
+            margin-left: 240px;
+            background-color: #0f0f0f;
+            min-height: 100vh;
+        }
+        .nav-item {
+            color: #a0a0a0;
+            transition: all 0.2s;
+        }
+        .nav-item:hover {
+            background-color: #2a2a2a;
+            color: #ffffff;
+        }
+        .nav-item.active {
+            background-color: #2563eb;
+            color: #ffffff;
+        }
+        .content-card {
+            background-color: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+        }
+        .stat-card {
+            background-color: #1a1a1a;
+            border: 1px solid #2a2a2a;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+                z-index: 50;
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
     </style>
     {% block head_extra %}{% endblock %}
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col">
-    <header class="bg-blue-600 text-white p-4 shadow-md">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-2xl font-bold">Rentalytics</h1>
-            
-            <!-- Desktop Navigation -->
-            <nav class="hidden md:flex space-x-1" role="navigation" aria-label="Main navigation">
-                <a href="/" class="nav-link text-white hover:text-blue-200 hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600" aria-current="page">Overview</a>
-                <a href="/log_entry" class="nav-link text-white hover:text-blue-200 hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600">Log Prices</a>
-                <a href="/dashboard" class="nav-link text-white hover:text-blue-200 hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600">Dashboard</a>
-                <a href="/insights" class="nav-link text-white hover:text-blue-200 hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600">Analytics</a>
-                <a href="/manage" class="nav-link text-white hover:text-blue-200 hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600">Settings</a>
-            </nav>
-
-            <!-- Mobile menu button -->
-            <button type="button" class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-white hover:text-blue-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white transition-colors duration-200" aria-controls="mobile-menu" aria-expanded="false" id="mobile-menu-button">
-                <span class="sr-only">Open main menu</span>
-                <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+<body>
+    <!-- Left Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="p-6 border-b border-gray-800">
+            <h1 class="text-xl font-bold text-white">Rentalytics</h1>
+        </div>
+        <nav class="p-4 space-y-1" role="navigation" aria-label="Main navigation">
+            <a href="/" class="nav-item nav-link flex items-center px-4 py-3 rounded-md text-sm" aria-current="page">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                 </svg>
-                <svg class="hidden h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                Overview
+            </a>
+            <a href="/log_entry" class="nav-item nav-link flex items-center px-4 py-3 rounded-md text-sm">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                 </svg>
-            </button>
-        </div>
+                Log Prices
+            </a>
+            <a href="/dashboard" class="nav-item nav-link flex items-center px-4 py-3 rounded-md text-sm">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                Dashboard
+            </a>
+            <a href="/insights" class="nav-item nav-link flex items-center px-4 py-3 rounded-md text-sm">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                Analytics
+            </a>
+            <a href="/manage" class="nav-item nav-link flex items-center px-4 py-3 rounded-md text-sm">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                Settings
+            </a>
+        </nav>
+    </aside>
 
-        <!-- Mobile menu -->
-        <div class="md:hidden hidden" id="mobile-menu">
-            <div class="px-2 pt-2 pb-3 space-y-1">
-                <a href="/" class="mobile-nav-link text-white hover:text-blue-200 hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600">Overview</a>
-                <a href="/log_entry" class="mobile-nav-link text-white hover:text-blue-200 hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600">Log Prices</a>
-                <a href="/dashboard" class="mobile-nav-link text-white hover:text-blue-200 hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600">Dashboard</a>
-                <a href="/insights" class="mobile-nav-link text-white hover:text-blue-200 hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600">Analytics</a>
-                <a href="/manage" class="mobile-nav-link text-white hover:text-blue-200 hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600">Settings</a>
-            </div>
-        </div>
-    </header>
+    <!-- Mobile Menu Button -->
+    <button type="button" class="md:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-gray-800 text-white" id="mobile-menu-button">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+    </button>
 
-    <!-- Toast Notification Container -->
-    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2" aria-live="polite" aria-atomic="true"></div>
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Toast Notification Container -->
+        <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2" aria-live="polite" aria-atomic="true"></div>
 
-    <main class="container mx-auto mt-8 p-4 bg-white rounded-lg shadow-lg flex-grow">
-        {% block content %}{% endblock %}
-    </main>
-
-    <footer class="bg-blue-600 text-white p-4 mt-auto shadow-md">
-        <div class="container mx-auto text-center">
-            <p>Rentalytics - Vacation Rental Pricing Analytics</p>
-        </div>
-    </footer>
+        <main class="p-6">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     
@@ -73,31 +130,21 @@
         // Mobile menu toggle
         document.addEventListener('DOMContentLoaded', function() {
             const mobileMenuButton = document.getElementById('mobile-menu-button');
-            const mobileMenu = document.getElementById('mobile-menu');
+            const sidebar = document.getElementById('sidebar');
             
-            if (mobileMenuButton && mobileMenu) {
+            if (mobileMenuButton && sidebar) {
                 mobileMenuButton.addEventListener('click', function() {
-                    const isExpanded = mobileMenuButton.getAttribute('aria-expanded') === 'true';
-                    mobileMenuButton.setAttribute('aria-expanded', !isExpanded);
-                    mobileMenu.classList.toggle('hidden');
-                    
-                    // Toggle hamburger/close icons
-                    const hamburgerIcon = mobileMenuButton.querySelector('svg:first-child');
-                    const closeIcon = mobileMenuButton.querySelector('svg:last-child');
-                    hamburgerIcon.classList.toggle('hidden');
-                    closeIcon.classList.toggle('hidden');
+                    sidebar.classList.toggle('mobile-open');
                 });
             }
 
             // Set active navigation item
             const currentPath = window.location.pathname;
-            const navLinks = document.querySelectorAll('.nav-link, .mobile-nav-link');
+            const navLinks = document.querySelectorAll('.nav-link');
             navLinks.forEach(link => {
                 if (link.getAttribute('href') === currentPath) {
-                    link.classList.add('bg-blue-700');
-                    if (link.classList.contains('nav-link')) {
-                        link.setAttribute('aria-current', 'page');
-                    }
+                    link.classList.add('active');
+                    link.setAttribute('aria-current', 'page');
                 }
             });
         });
